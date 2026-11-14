@@ -272,6 +272,7 @@ const OVERVIEW = {
     blur:  'assets/overview/overview_blur.webp',    // 预模糊（景深用）
     blurN: 'assets/overview/overview_blur_night.webp',
     segs:  'assets/overview/overview_seg.json',     // 每块玻璃台 / 设施的包围盒（tools/overview/segments.py）
+    line:  'assets/overview/overview_line.webp',    // 线稿遮罩（开场「白纸线稿 → 上色」；tools/overview/lineart.py）
   },
   machine:{ c:[836, 575], rx:122, ry:158, tip:[837, 420] },   // 扭蛋机热点椭圆 / 提示位置
   anchor:[838, 599],                          // 推镜头对齐点 = 玻璃球中心
@@ -347,7 +348,8 @@ const GLSL_COMMON = `
   // 金色和粉色再补一点暖光
   vec3 nightCol(vec3 c){
     float lum = dot(c, vec3(.299,.587,.114));
-    vec3 n = clamp(mat3(0.584, -0.288, -0.014,  -0.266, 0.403, 0.086,  -0.208, -0.212, 0.877) * c + vec3(0.308, 0.517, -0.053), 0.0, 1.0);
+    // 按总览「白天图 / 夜晚图」每个通道的均值和标准差对齐（不用线性回归：回归会把对比度压到 1/3，整张图发灰发平）
+    vec3 n = clamp((c - vec3(0.958, 0.774, 0.899)) / vec3(0.0846, 0.1207, 0.0742) * vec3(0.137, 0.092, 0.102) + vec3(0.464, 0.361, 0.793), 0.0, 1.0);
     float gold = smoothstep(0.06, 0.22, c.r - c.b) * smoothstep(0.45, 0.85, lum);
     n += vec3(1.0, 0.80, 0.50) * gold * 0.30;
     float pink = smoothstep(0.18, 0.40, c.r - c.g) * smoothstep(0.55, 0.85, c.r) * smoothstep(0.05, 0.25, c.b - c.g);
@@ -373,20 +375,34 @@ const ovU = {
   uBlur:{ value:0 }, uBand:{ value:240 }, uFocus:{ value:new THREE.Vector2(...OVERVIEW.anchor) },
   uDissolve:{ value:0 }, uDisC:{ value:new THREE.Vector2() }, uMotion:{ value:REDUCED ? 0.3 : 1 }, uFx:{ value:1 },
   uBlurT:{ value:tex(OVERVIEW.src.blur, mgrOV, { mip:false }) }, uBlurN:{ value:tex(OVERVIEW.src.blurN, mgrOVLater, { mip:false }) },
-  uDof:{ value:0 }, uDofD:{ value:0.78 }, uMist:{ value:0 }, uReveal:{ value:null }, uSeg:{ value:new THREE.Vector4(0, 0, 1, 1) }, uSegA:{ value:0 },
+  uDof:{ value:0 }, uDofD:{ value:0.78 }, uReveal:{ value:null }, uSeg:{ value:new THREE.Vector4(0, 0, 1, 1) }, uSegA:{ value:0 },
+  // 开场「建园」：uBuild 0 → 1（1 = 结束，和主图 1:1）；入夜：uIgnite 灯从扭蛋机往外逐盏亮，uSearch 探照灯
+  uLine:{ value:tex(OVERVIEW.src.line, mgrOV, { mip:false }) }, uBuild:{ value:1 }, uOrigin:{ value:new THREE.Vector2(...OVERVIEW.anchor) },
+  uIgnite:{ value:0 }, uSearch:{ value:0 },
 };
 const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
   uniforms:ovU, depthTest:false, depthWrite:false, transparent:true, premultipliedAlpha:true,
   vertexShader:`void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader:`
-    uniform sampler2D uDay, uNight, uLights, uDepth, uBlurT, uBlurN, uReveal;
-    uniform vec4 uSeg; uniform float uSegA, uDof, uDofD, uMist;
-    uniform vec2 uRes, uImg, uPar, uMC, uMR, uBeamO, uFocus, uDisC;
+    uniform sampler2D uDay, uNight, uLights, uDepth, uBlurT, uBlurN, uReveal, uLine;
+    uniform vec4 uSeg; uniform float uSegA, uDof, uDofD;
+    uniform vec2 uRes, uImg, uPar, uMC, uMR, uBeamO, uFocus, uDisC, uOrigin;
     uniform vec3 uView;
-    uniform float uDpr, uNightT, uTime, uHover, uTouch, uFocusD, uBlur, uBand, uDissolve, uMotion, uFx;
+    uniform float uDpr, uNightT, uTime, uHover, uTouch, uFocusD, uBlur, uBand, uDissolve, uMotion, uFx, uBuild, uIgnite, uSearch;
     ${GLSL_COMMON}${GLSL_SCREEN}
     vec2 toUV(vec2 ip){ return vec2(ip.x / uImg.x, 1.0 - ip.y / uImg.y); }
-    vec3 paint(vec2 uv, float bias){ return mix(texture2D(uDay, uv, bias).rgb, texture2D(uNight, uv, bias).rgb, uNightT); }
+    // 白天图 → 夜晚图 不是线性混合：先进入粉色黄昏，再沉到蓝紫色，最后才换成夜景画（两端和原画 1:1）
+    float nightW(){ return smoothstep(0.28, 0.92, uNightT); }
+    vec3 paint(vec2 uv, float bias){ return mix(texture2D(uDay, uv, bias).rgb, texture2D(uNight, uv, bias).rgb, nightW()); }
+    vec3 duskGrade(vec3 c){
+      float pinkK = sin(clamp(uNightT / 0.55, 0.0, 1.0) * 3.14159) * 0.85;
+      float violK = sin(clamp((uNightT - 0.3) / 0.62, 0.0, 1.0) * 3.14159) * 0.7;
+      c = mix(c, c * vec3(1.05, 0.84, 0.97) + vec3(0.05, 0.0, 0.035), pinkK);
+      c = mix(c, c * vec3(0.60, 0.52, 1.02) + vec3(0.04, 0.0, 0.13), violK);
+      return c;
+    }
+    // 离扭蛋机的距离（0 = 扭蛋机，约 1 = 画面最远的角）：建园和点灯都从这里往外扩
+    float fromOrigin(vec2 ip){ return clamp(length((ip - uOrigin) * vec2(1.0, 1.45)) / 1200.0, 0.0, 1.0); }
     float lobe(float a, float c, float w){ float d = (a - c) / w; return exp(-d*d); }
     void main(){
       vec2 sp = screenPx();
@@ -405,17 +421,40 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
           c += paint(toUV(ip + vec2(cos(a), sin(a)) * rr * rad), bias) * 0.07;
         }
       } else c = paint(uv, 0.0);
+      float nw = nightW();
       // 景深：焦点跟着光标所在的深度，越远离焦点越虚（推镜头时用上面的移轴，不叠加）
-      vec3 blurC = mix(texture2D(uBlurT, uv).rgb, texture2D(uBlurN, uv).rgb, uNightT);
+      vec3 blurC = mix(texture2D(uBlurT, uv).rgb, texture2D(uBlurN, uv).rgb, nw);
       if (uDof * uFx > 0.001 && uBlur < 0.001){
         float coc = uDof * smoothstep(0.05, 0.30, abs(dep - uDofD));
         c = mix(c, blurC, coc);
       }
-      if (uNightT * uFx > 0.001){
+      if (uNightT > 0.001 && uNightT < 0.999) c = duskGrade(c);
+      if (nw * uFx > 0.001){
         vec3 L = texture2D(uLights, uv).rgb;
+        // 点灯：从扭蛋机往外一圈圈亮起，每盏灯亮的瞬间闪一下
+        float o = fromOrigin(ip) * 0.85 + L.b * 0.15, u = uIgnite * 1.2;
+        float lit = smoothstep(o, o + 0.05, u);
+        float fd = (u - o - 0.04) / 0.035, flash = exp(-fd * fd);
         float tw = 0.5 + 0.5 * sin(uTime * (1.2 + L.b * 1.8) * uMotion + L.b * 37.0);
+        // 跑马灯：一道道亮带沿着斜向扫过串灯
+        float chase = pow(0.5 + 0.5 * sin(dot(ip, vec2(0.045, 0.028)) - uTime * 4.0 * uMotion), 3.0);
         vec3 core = texture2D(uNight, uv).rgb, halo = texture2D(uNight, uv, 3.0).rgb;
-        c += uNightT * (core * L.r * (tw - 0.35) * 0.42 + halo * L.g * (0.35 + 0.65 * tw) * 0.30);
+        c = mix(c, halo * 0.8, nw * (1.0 - lit) * clamp(L.r * 1.3 + L.g * 0.25, 0.0, 1.0));   // 还没轮到的灯：融进周围（不是黑点）
+        c += nw * lit * (core * L.r * ((tw - 0.35) * 0.42 + chase * 0.35) + halo * L.g * ((0.35 + 0.65 * tw) * 0.30 + chase * 0.16));
+        c += nw * flash * (core * L.r * 1.1 + halo * L.g * 0.8);
+        c = max(c, 0.0);
+      }
+      // 探照灯：从画面下沿射向夜空的三道光柱，慢慢左右扫
+      if (uSearch * uFx > 0.001){
+        vec2 s = sp / uRes; float asp = uRes.x / uRes.y, acc = 0.0;
+        for (int i = 0; i < 3; i++){
+          float fi = float(i);
+          vec2 d = (s - vec2(0.16 + 0.34 * fi, 1.12)) * vec2(asp, 1.0);
+          float ang = -1.5708 + sin(uTime * (0.21 + 0.06 * fi) * uMotion + fi * 2.1) * (0.38 + 0.08 * fi);
+          float da = atan(d.y, d.x) - ang, w = 0.05 + 0.02 * fi, r = length(d);
+          acc += (exp(-da * da / (w * w)) + 0.35 * exp(-da * da / (w * w * 6.0))) * smoothstep(0.05, 0.3, r) * exp(-r * 0.55);
+        }
+        c = screenB(c, vec3(0.82, 0.80, 1.0) * acc * 0.36 * uSearch);
       }
       {
         vec2 bd = ip - uBeamO; float r = length(bd); float a = degrees(atan(bd.y, bd.x));
@@ -442,13 +481,22 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
         c = screenB(c, mix(vec3(1.0, 0.96, 0.92), vec3(0.9, 0.85, 1.0), uNightT) * inner * uSegA * 0.18);
         c = mix(c, c * vec3(1.0, 0.93, 0.84) + vec3(0.10, 0.07, 0.04), ring * uSegA * 0.35);
       }
-      // 开场的雾：玻璃台落下的地方雾先散开，最后整片散去
-      if (uMist > 0.001){
-        // 雾：画面去色、虚化、提亮，只剩地面的影子；落下来的那一块才恢复原样
-        float m = uMist * (1.0 - texture2D(uReveal, uv).r);
-        vec3 ghost = mix(vec3(dot(blurC, vec3(.299,.587,.114))), blurC, 0.3);
-        ghost = mix(ghost, mix(vec3(1.0, 0.95, 0.975), vec3(0.62, 0.56, 0.92), uNightT), 0.5);
-        c = mix(c, ghost, m);
+      // 开场「建园」：白纸 + 彩色线稿（RGB 三色微微错开）→ 颜色从扭蛋机像水彩一样往外洇开；
+      // 设施和玻璃台先保持线稿，等「长出来」（见 BUILD）后才露出原画
+      if (uBuild < 0.999){
+        vec4 P = texture2D(uReveal, uv);                       // R = 已经长出来，G = 还没长出来的设施
+        float th = fromOrigin(ip) * 0.86 + (vnoise(ip / 90.0) * 0.6 + vnoise(ip / 26.0) * 0.4) * 0.14;
+        float front = uBuild * 1.15 - 0.05;
+        float rev = max(smoothstep(th - 0.012, th + 0.012, front) * (1.0 - P.g), P.r);
+        vec2 ca = vec2(1.8 * (1.0 - uBuild) + 0.6, 0.0);
+        vec3 e = vec3(texture2D(uLine, toUV(ip + ca)).r, texture2D(uLine, uv).r, texture2D(uLine, toUV(ip - ca)).r);
+        vec3 sketch = vec3(1.0, 0.978, 0.986) * (1.0 - e) + texture2D(uDay, uv).rgb * 0.78 * e;
+        c = mix(sketch, c, rev);
+        float rd = (front - th) / 0.02, pd = (front - th - 0.035) / 0.015;
+        float rim = exp(-rd * rd) * (1.0 - P.g);       // 洇开的边：一道亮边 + 里侧一圈颜料积边
+        float pig = exp(-pd * pd) * (1.0 - P.g);
+        c = screenB(c, vec3(1.0, 0.93, 0.97) * rim * 0.45);
+        c *= 1.0 - 0.07 * pig;
       }
       float alpha = 1.0;
       if (uDissolve > 0.0){
@@ -579,6 +627,10 @@ const clFS = `
     if (uNight > 0.001 && uHasNight < 0.5){
       vec3 n = nightCol(c);
       float lum = dot(c, vec3(.299,.587,.114));
+      // 白天左上角的阳光光束夜里不该在：压暗；四周再轻轻压暗一圈，扭蛋机更突出
+      n *= 1.0 - 0.38 * (1.0 - smoothstep(120.0, 620.0, length(ip - vec2(-40.0, -60.0))));
+      vec2 vq = (sp / uRes - 0.5) * vec2(1.2, 1.0);
+      n *= 1.0 - 0.28 * smoothstep(0.25, 0.75, length(vq));
       float inGlobe = 1.0 - smoothstep(uGlobe.z - 30.0, uGlobe.z, length(ip - uGlobe.xy));
       n += vec3(1.0, 0.9, 0.7) * inGlobe * smoothstep(0.88, 0.99, lum) * (0.6 + 0.4 * sin(uTime * 3.0 + ip.x * 0.07 + ip.y * 0.09)) * 0.45;
       c = mix(c, n, uNight);
@@ -607,6 +659,7 @@ function clCover(){ const [IW, IH] = CLOSE.size; return Math.max(innerWidth/IW, 
 function clClamp(){ const [IW, IH] = CLOSE.size; CL.ox = Math.min(0, Math.max(innerWidth - IW*CL.s, CL.ox)); CL.oy = Math.min(0, Math.max(innerHeight - IH*CL.s, CL.oy)); }
 function clLayout(){
   const [, IH] = CLOSE.size, W = innerWidth, H = innerHeight;
+  if (!W || !H) return;
   CL.s = clCover();
   const fx = W/H < 1 ? CLOSE.foreFocusX.port : CLOSE.foreFocusX.land;
   CL.ox = W/2 - fx*CL.s; CL.oy = H/2 - IH/2*CL.s; clClamp();
@@ -635,14 +688,14 @@ const spriteVS = `
     gl_Position = projectionMatrix * viewMatrix * vec4(p, 0.0, 1.0);
   }`;
 const spriteFS = `
-  uniform sampler2D map; uniform float uAlpha, uNight, uBright; uniform vec3 uTint; varying vec2 vUv;
+  uniform sampler2D map; uniform float uAlpha, uNight, uBright, uScreen; uniform vec3 uTint; varying vec2 vUv;
   ${GLSL_COMMON}
   void main(){
     vec4 t = texture2D(map, vUv);
     float a = t.a * uAlpha; if (a < 0.003) discard;
     vec3 c = t.rgb / max(t.a, 0.0001);
     c *= uTint; c = screenB(c, vec3(uBright));
-    c = mix(c, nightCol(c), uNight);
+    c = mix(c, nightCol(c) * (1.0 - 0.45 * uScreen), uNight);   // 屏幕前景（虚化花丛）夜里更暗，像背光的剪影
     gl_FragColor = vec4(c * a, a);
   }`;
 const sprites = [];
@@ -1412,15 +1465,31 @@ function applyNight(t){
   document.body.classList.toggle('night', t > 0.5);
   $('#btnNight').innerHTML = t > 0.5 ? '☀<span class="t"> 白天</span>' : '☾<span class="t"> 夜晚</span>';
 }
+// 入夜时间线：粉色黄昏 → 蓝紫 → 夜景画（着色器里按 uNightT 分段调色）；后半段灯从扭蛋机往外逐盏亮，探照灯升起，放两朵烟花
+const NIGHT = { o:{ t:0 }, dur:3.4 };
 function nightTransition(auto){
   setHint('');
-  const o = { t:S.night };
-  gsap.to(o, { t:1, duration:REDUCED ? .1 : 2.2, ease:'sine.inOut', onUpdate(){ applyNight(o.t); },
+  const D = REDUCED ? .1 : NIGHT.dur, o = NIGHT.o; o.t = S.night;
+  gsap.killTweensOf(o); gsap.killTweensOf(ovU.uIgnite); gsap.killTweensOf(ovU.uSearch);
+  gsap.to(o, { t:1, duration:D, ease:'sine.inOut', onUpdate(){ applyNight(o.t); },
     onComplete(){ if (auto){ setHint('月亮亮了 · 再扭一次 ☾', [CLOSE.crank[0], CLOSE.crank[1] - 40]); toast('仲夏夜开园 ✦ 第四颗扭蛋解锁'); } } });
+  gsap.to(ovU.uIgnite, { value:1, duration:REDUCED ? .1 : 2.6, delay:D*0.55, ease:'none' });
+  gsap.to(ovU.uSearch, { value:1, duration:REDUCED ? .1 : 1.8, delay:D*0.8, ease:'sine.out' });
+  if (OV.mode === 'overview' && !REDUCED){
+    [[0.95, [700, 150], true], [1.35, [1250, 110], false], [1.7, [380, 210], false]].forEach(([k, p, big]) => gsap.delayedCall(D*k, () => {
+      if (OV.mode !== 'overview') return; const [x, y] = ovToScreen(...p); fireworkBurst(x, y, big); }));
+    FIREWORK.next = D*1.7 + 3;
+  }
   if (OV.mode === 'closeup') ['valance', 'col'].forEach((g, i) => gsap.delayedCall(i*0.4, () => chase(g, 1.6)));
 }
 function toggleNight(){
-  if (S.night > 0.5){ const o = { t:S.night }; gsap.to(o, { t:0, duration:REDUCED ? .1 : 2.0, ease:'sine.inOut', onUpdate(){ applyNight(o.t); } }); }
+  if (S.night > 0.5){
+    const o = NIGHT.o; o.t = S.night;
+    gsap.killTweensOf(o); gsap.killTweensOf(ovU.uIgnite); gsap.killTweensOf(ovU.uSearch);
+    gsap.to(ovU.uSearch, { value:0, duration:REDUCED ? .1 : .8 });
+    gsap.to(ovU.uIgnite, { value:0, duration:REDUCED ? .1 : 1.0, ease:'none' });
+    gsap.to(o, { t:0, duration:REDUCED ? .1 : 2.8, delay:REDUCED ? 0 : .3, ease:'sine.inOut', onUpdate(){ applyNight(o.t); } });
+  }
   else nightTransition(false);
 }
 
@@ -1497,7 +1566,7 @@ const layer = () => OV.mode === 'overview' ? { bub:ovBub, toImg:ovToImg, toScree
 
 canvas.addEventListener('pointerdown', e => {
   SFX.ctx?.resume(); P.pos = [e.clientX, e.clientY];
-  if (RAIN.on){ rainSkip(); return; }
+  if (BUILD.on){ buildSkip(); return; }
   if (S.mode === 'card' || S.mode === 'closing') return;
   const L = layer();
   if (OV.mode === 'overview'){
@@ -1542,7 +1611,7 @@ canvas.addEventListener('pointermove', e => {
 function hover(x, y){
   if (OV.mode === 'overview'){
     const hot = overMachine(x, y), bub = !!ovBub.at(...ovToImg(x, y));
-    const seg = hot || RAIN.on ? null : segAt(...ovToImg(x, y));
+    const seg = hot || BUILD.on ? null : segAt(...ovToImg(x, y));
     setSegHot(seg);
     canvas.classList.toggle('hot', hot || bub || !!seg);
     if (!TOUCH && hot !== (OV.hover > 0.5)) gsap.to(OV, { hover:hot ? 1 : 0, duration:hot ? .45 : .6, ease:'sine.out', overwrite:'auto' });
@@ -1630,7 +1699,7 @@ function depthAt(o, x, y, size){
 
 /* ================================================================== 总览：玻璃台 / 设施（悬停发光 + 音符，点一下撒星光） */
 let SEGS = [];
-fetch(OVERVIEW.src.segs).then(r => r.json()).then(j => { SEGS = j.segs.filter(s => s.area > 600 && s.area < 40000); RAIN.data = j.segs.filter(s => s.area > 600); maybeRain(); }).catch(() => { RAIN.data = []; maybeRain(); });
+fetch(OVERVIEW.src.segs).then(r => r.json()).then(j => { SEGS = j.segs.filter(s => s.area > 600 && s.area < 40000); BUILD.data = j.segs; maybeBuild(); }).catch(() => { BUILD.data = []; maybeBuild(); });
 function segAt(ix, iy){
   let best = null;
   for (const s of SEGS){ const [x0, y0, x1, y1] = s.box; if (ix >= x0 && ix <= x1 && iy >= y0 && iy <= y1 && (!best || s.area < best.area)) best = s; }
@@ -1657,124 +1726,156 @@ function ripple(x, y){
   SFX.play('tile_' + Math.floor(rnd(0, 8)), { gain:0.25 });
 }
 
-/* ================================================================== 开场「玻璃台雨」
-   先盖一层奶油色薄雾；画里的每块玻璃台 / 每个设施（从主图里裁出来）从上方错落落下，带拖影；
-   落地时地面闪一圈光、那一块的雾散开，露出画里本来的样子；全部落完，雾整片散去 → 和主图 1:1。
-   有了真正的空地版主图（A1）以后，可以换成「空地 + 逐块落下」的精确版。 */
-const RAIN = { on:false, data:null, items:[], started:false };
+/* ================================================================== 开场「建园」（参考视频：零点零一分 仲夏夜入园）
+   不是雾：一开始是白纸上的彩色线稿（RGB 微微错开，像手绘），
+   颜色从扭蛋机开始像水彩一样往外洇开，洇开的前沿撒一串闪粉；
+   前沿经过的设施 / 玻璃台从地面「长」出来（缩放回弹 + 一圈星光 + 一个音），长好后露出原画；
+   全部结束 → 和主图 1:1，视差和景深这时才打开。
+   每次打开浏览器第一次进总览时播放（?build 或 ?rain 强制播放，?nobuild 关掉），点一下快进。 */
+const BUILD = { on:false, data:null, items:[], started:false, front:0 };
 const revealCanvas = document.createElement('canvas'); revealCanvas.width = 418; revealCanvas.height = 236;
 const revealG = revealCanvas.getContext('2d');
 const revealTex = new THREE.CanvasTexture(revealCanvas); revealTex.colorSpace = THREE.NoColorSpace;
 ovU.uReveal.value = revealTex;
-const rainGeo = new THREE.InstancedBufferGeometry(); rainGeo.index = unitPlane.index; rainGeo.attributes.position = unitPlane.attributes.position;
-const RAIN_MAX = 160;
-const rainBox = new Float32Array(RAIN_MAX*4), rainD = new Float32Array(RAIN_MAX*2);
-rainGeo.setAttribute('aBox', new THREE.InstancedBufferAttribute(rainBox, 4)); rainGeo.setAttribute('aD', new THREE.InstancedBufferAttribute(rainD, 2));
-rainGeo.instanceCount = 0;
-const rainMesh = new THREE.Mesh(rainGeo, new THREE.ShaderMaterial({
-  uniforms:{ uView:ovU.uView, uDay:ovU.uDay, uNight:ovU.uNight, uNightT:ovU.uNightT, uImg:ovU.uImg }, transparent:true, premultipliedAlpha:true, depthTest:false, depthWrite:false, side:THREE.DoubleSide,
+function revealBlob(box, col, k0 = 1.2){
+  const k = 418/OVERVIEW.size[0], [x0, y0, x1, y1] = box;
+  const g = revealG.createRadialGradient(0, 0, 0, 0, 0, 1);
+  g.addColorStop(0, col); g.addColorStop(0.7, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+  revealG.save(); revealG.globalCompositeOperation = 'lighter';
+  revealG.translate((x0 + x1)/2*k, (y0 + y1)/2*k); revealG.scale((x1 - x0)/2*k*k0 + 1, (y1 - y0)/2*k*(k0 + 0.05) + 1);
+  revealG.fillStyle = g; revealG.beginPath(); revealG.arc(0, 0, 1, 0, Math.PI*2); revealG.fill(); revealG.restore();
+  revealTex.needsUpdate = true;
+}
+const popGeo = new THREE.InstancedBufferGeometry(); popGeo.index = unitPlane.index; popGeo.attributes.position = unitPlane.attributes.position;
+const POP_MAX = 120;
+const popBox = new Float32Array(POP_MAX*4), popD = new Float32Array(POP_MAX*2);
+popGeo.setAttribute('aBox', new THREE.InstancedBufferAttribute(popBox, 4)); popGeo.setAttribute('aD', new THREE.InstancedBufferAttribute(popD, 2));
+popGeo.instanceCount = 0;
+// 「长出来」的那一块：从主图里按包围盒的椭圆裁出来，以底边为支点缩放（aD.x = 缩放，aD.y = 不透明度）
+const popMesh = new THREE.Mesh(popGeo, new THREE.ShaderMaterial({
+  uniforms:{ uView:ovU.uView, uDay:ovU.uDay, uImg:ovU.uImg }, transparent:true, premultipliedAlpha:true, depthTest:false, depthWrite:false, side:THREE.DoubleSide,
   vertexShader:`
     attribute vec4 aBox; attribute vec2 aD; uniform vec3 uView;
-    varying vec2 vIp; varying vec4 vBox; varying vec2 vD;
+    varying vec2 vIp; varying vec4 vBox; varying float vA;
     void main(){
       vec2 l = position.xy + 0.5;
-      float streak = min(aD.x * 0.35, 90.0);                 // 拖影长度（随下落距离）
-      vec2 ip = vec2(mix(aBox.x, aBox.z, l.x), mix(aBox.y - streak, aBox.w, l.y));
-      vIp = ip; vBox = aBox; vD = aD;
-      vec2 p = (ip - vec2(0.0, aD.x)) * uView.x + uView.yz;
+      vec2 ip = vec2(mix(aBox.x - 4.0, aBox.z + 4.0, l.x), mix(aBox.y - 4.0, aBox.w + 4.0, 1.0 - l.y));
+      vec2 pivot = vec2((aBox.x + aBox.z) * 0.5, aBox.w - (aBox.w - aBox.y) * 0.12);
+      vIp = ip; vBox = aBox; vA = aD.y;
+      vec2 p = (pivot + (ip - pivot) * vec2(mix(1.0, aD.x, 0.7), aD.x)) * uView.x + uView.yz;
       gl_Position = projectionMatrix * viewMatrix * vec4(p, 0.0, 1.0);
     }`,
   fragmentShader:`
-    uniform sampler2D uDay, uNight; uniform float uNightT; uniform vec2 uImg; varying vec2 vIp; varying vec4 vBox; varying vec2 vD;
-    vec2 toUV(vec2 ip){ return vec2(ip.x / uImg.x, 1.0 - ip.y / uImg.y); }
+    uniform sampler2D uDay; uniform vec2 uImg; varying vec2 vIp; varying vec4 vBox; varying float vA;
     void main(){
       vec2 c = (vBox.xy + vBox.zw) * 0.5, hs = (vBox.zw - vBox.xy) * 0.5 + 4.0;
-      float streak = min(vD.x * 0.35, 90.0);
-      vec4 acc = vec4(0.0);
-      for (int i = 0; i < 6; i++){
-        vec2 q = vIp + vec2(0.0, float(i) / 5.0 * streak);
-        float m = 1.0 - smoothstep(0.72, 1.0, length((q - c) / hs));
-        float w = 1.0 - float(i) / 6.0;
-        vec3 col = mix(texture2D(uDay, toUV(q)).rgb, texture2D(uNight, toUV(q)).rgb, uNightT);
-        acc += vec4(col * m, m) * w;
-      }
-      acc /= 3.5;
-      float a = clamp(acc.a, 0.0, 1.0) * vD.y;
-      if (a < 0.003) discard;
-      gl_FragColor = vec4(acc.rgb / max(acc.a, 0.001) * a, a);
+      float m = 1.0 - smoothstep(0.72, 1.0, length((vIp - c) / hs));
+      float a = m * vA; if (a < 0.003) discard;
+      gl_FragColor = vec4(texture2D(uDay, vec2(vIp.x / uImg.x, 1.0 - vIp.y / uImg.y)).rgb * a, a);
     }` }));
-rainMesh.frustumCulled = false; rainMesh.renderOrder = 0.5; ovScene.add(rainMesh);
-function rainWanted(){
-  if (Q.has('rain')) return true;
-  if (Q.has('norain') || REDUCED) return false;
-  try { return !sessionStorage.getItem('gp_rain_seen'); } catch (e) { return true; }
+popMesh.frustumCulled = false; popMesh.renderOrder = 0.5; ovScene.add(popMesh);
+function buildWanted(){
+  if (Q.has('build') || Q.has('rain')) return true;
+  if (Q.has('nobuild') || Q.has('norain') || REDUCED) return false;
+  try { return !sessionStorage.getItem('gp_build_seen'); } catch (e) { return true; }
 }
-// 主图加载前就把雾盖上，免得先闪一下完整的画
-if (rainWanted()){ ovU.uMist.value = 1; revealG.clearRect(0, 0, 418, 236); revealTex.needsUpdate = true; }
-function maybeRain(){ if (OV.ready && RAIN.data && !RAIN.started && ovU.uMist.value > 0) startRain(); }
-function startRain(){
-  RAIN.started = true; RAIN.on = true;
-  try { sessionStorage.setItem('gp_rain_seen', '1'); } catch (e) {}
-  // 大块（摩天轮连着几块台子）切成小块，各自落下
-  const items = [];
-  RAIN.data.forEach(s => {
-    const [x0, y0, x1, y1] = s.box, w = x1 - x0, h = y1 - y0;
-    const nx = Math.ceil(w/170), ny = Math.ceil(h/170);
-    for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){
-      const bx0 = x0 + w*i/nx, bx1 = x0 + w*(i + 1)/nx, by0 = y0 + h*j/ny, by1 = y0 + h*(j + 1)/ny;
-      items.push({ box:[bx0, by0, bx1, by1], c:[(bx0 + bx1)/2, (by0 + by1)/2], r:Math.max(bx1 - bx0, by1 - by0)*0.75, color:s.color, fac:s.kind === 'facility' || nx*ny > 1, d:0, a:0, done:false });
-    }
+// 主图加载前就切到线稿状态，免得先闪一下完整的画
+if (buildWanted()){ ovU.uBuild.value = 0; revealG.fillStyle = '#000'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true; }
+function maybeBuild(){ if (OV.ready && BUILD.data && !BUILD.started && ovU.uBuild.value < 1) startBuild(); }
+const BUILD_T = 3.6;
+function startBuild(){
+  BUILD.started = true; BUILD.on = true;
+  try { sessionStorage.setItem('gp_build_seen', '1'); } catch (e) {}
+  const O = OVERVIEW.anchor, M = OVERVIEW.machine;
+  const dist = (x, y) => Math.min(1, Math.hypot(x - O[0], (y - O[1])*1.45)/1200);
+  // 扭蛋机第一个长出来；其余只取中小块（大包围盒里混着地面，跟着颜色一起洇开）
+  const items = [{ box:[M.c[0] - 132, M.c[1] - 172, M.c[0] + 132, M.c[1] + 160], hero:true }];
+  BUILD.data.forEach(s => { const [x0, y0, x1, y1] = s.box; if (s.area > 600 && x1 - x0 < 300 && y1 - y0 < 260) items.push({ box:s.box, color:s.color }); });
+  items.forEach(it => {
+    const [x0, y0, x1, y1] = it.box; it.c = [(x0 + x1)/2, (y0 + y1)/2];
+    it.th = it.hero ? -1 : dist(...it.c)*0.86 + 0.07 - 0.03;          // 前沿快到时开始长
+    it.s = 0.5; it.a = 0; it.state = 0;
+    revealBlob(it.box, 'rgb(0,255,0)');                                // G：先标成「还没长出来」
   });
-  // 玻璃台先落，设施后落；同类里随机错开
-  items.sort((a, b) => (a.fac - b.fac) || (Math.random() - 0.5));
-  RAIN.items = items.slice(0, RAIN_MAX);
-  const T = 2.6, nT = RAIN.items.filter(i => !i.fac).length;
-  RAIN.items.forEach((it, k) => {
-    const delay = 0.35 + (it.fac ? 1.3 + Math.random()*1.0 : (k/Math.max(1, nT))*1.6 + Math.random()*0.15);
-    it.d = 520;
-    gsap.to(it, { a:1, duration:.15, delay });
-    gsap.to(it, { d:0, duration:.5, delay, ease:'power2.in', onComplete(){ rainLand(it); } });
-  });
-  gsap.delayedCall(0.35 + T + 0.55, rainEnd);
+  BUILD.items = items.slice(0, POP_MAX);
+  ovU.uBuild.value = 0;
+  gsap.to(ovU.uBuild, { value:1, duration:BUILD_T, delay:0.45, ease:'sine.inOut', onComplete:buildEnd });
 }
-function rainLand(it){
-  it.done = true;
-  // 按这一块的形状（包围盒的椭圆）散开雾
-  const k = 418/OVERVIEW.size[0], [x0, y0, x1, y1] = it.box;
-  const g = revealG.createRadialGradient(0, 0, 0, 0, 0, 1);
-  g.addColorStop(0, 'rgba(255,0,0,1)'); g.addColorStop(0.7, 'rgba(255,0,0,1)'); g.addColorStop(1, 'rgba(255,0,0,0)');
-  revealG.save(); revealG.globalCompositeOperation = 'lighter';
-  revealG.translate((x0 + x1)/2*k, (y0 + y1)/2*k); revealG.scale((x1 - x0)/2*k*1.2 + 1, (y1 - y0)/2*k*1.25 + 1);
-  revealG.fillStyle = g; revealG.beginPath(); revealG.arc(0, 0, 1, 0, Math.PI*2); revealG.fill(); revealG.restore();
-  revealTex.needsUpdate = true;
-  gsap.to(it, { a:0, duration:.35, delay:.1 });
-  const [x, y] = ovToScreen(it.c[0], it.c[1] + (it.box[3] - it.box[1])*0.3);
-  if (!REDUCED){ const n = 10, R0 = it.r*OV.s*0.5;
-    for (let q = 0; q < n; q++){ const a = q/n*Math.PI*2; FX.add({ x:x + Math.cos(a)*R0*0.4, y:y + Math.sin(a)*R0*0.2, vx:Math.cos(a)*R0*1.6, vy:Math.sin(a)*R0*0.6, g:0, drag:3, life:.55, sz0:6, kind:1, color:'#fff6e8', a0:0.8 }); } }
-  if (Math.random() < 0.35) SFX.play('tile_' + Math.floor(rnd(0, 8)), { gain:0.22 });
+function popItem(it){
+  it.state = 1;
+  gsap.to(it, { a:1, duration:0.12 });
+  gsap.to(it, { s:1, duration:it.hero ? 0.75 : 0.55, ease:'back.out(2.2)', onComplete(){
+    it.state = 2; revealBlob(it.box, 'rgb(255,0,0)');
+    gsap.to(it, { a:0, duration:0.3, delay:0.05 });
+  } });
+  const [x, y] = ovToScreen(it.c[0], it.box[3] - (it.box[3] - it.box[1])*0.2);
+  if (!REDUCED){
+    const R0 = Math.max(it.box[2] - it.box[0], 40)*OV.s*0.5, n = it.hero ? 22 : 10;
+    for (let q = 0; q < n; q++){ const a = q/n*Math.PI*2;
+      FX.add({ x:x + Math.cos(a)*R0*0.3, y:y + Math.sin(a)*R0*0.15, vx:Math.cos(a)*R0*1.8, vy:Math.sin(a)*R0*0.7 - 30, g:40, drag:3, life:it.hero ? 0.9 : 0.6, sz0:it.hero ? 9 : 6, kind:q % 3 === 2 ? 1 : 0,
+        color:pick1(['#ffffff', '#ffe6aa', '#ffc4ea', it.color || '#d8ecff']), a0:0.85, spin:rnd(-4, 4) }); }
+  }
+  if (it.hero || Math.random() < 0.4) SFX.play('tile_' + (it.hero ? 0 : Math.floor(rnd(1, 8))), { gain:it.hero ? 0.45 : 0.22 });
 }
-function rainEnd(){
-  if (!RAIN.on) return;
-  gsap.to(ovU.uMist, { value:0, duration:.9, ease:'sine.inOut', onComplete(){ RAIN.on = false; RAIN.items = []; rainGeo.instanceCount = 0; } });
+function buildEnd(){
+  if (!BUILD.on) return;
+  BUILD.items.forEach(it => { if (it.state === 0) popItem(it); });
+  gsap.delayedCall(0.9, () => { BUILD.on = false; BUILD.items = []; popGeo.instanceCount = 0; ovU.uBuild.value = 1; });
 }
-function rainSkip(){
-  RAIN.items.forEach(it => { gsap.killTweensOf(it); it.a = 0; });
-  gsap.killTweensOf(ovU.uMist);
-  gsap.to(ovU.uMist, { value:0, duration:.4, onComplete(){ RAIN.on = false; RAIN.items = []; rainGeo.instanceCount = 0; } });
+function buildSkip(){
+  gsap.killTweensOf(ovU.uBuild);
+  BUILD.items.forEach(it => { gsap.killTweensOf(it); it.a = 0; it.state = 2; });
+  revealG.fillStyle = '#f00'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true;
+  gsap.to(ovU.uBuild, { value:1, duration:.45, ease:'sine.out', onComplete(){ BUILD.on = false; BUILD.items = []; popGeo.instanceCount = 0; } });
 }
-function updateRain(){
-  if (!RAIN.items.length){ rainGeo.instanceCount = 0; return; }
+function updateBuild(){
+  if (!BUILD.on){ popGeo.instanceCount = 0; return; }
+  const front = ovU.uBuild.value*1.15 - 0.05;
   let n = 0;
-  RAIN.items.forEach(it => { if (it.a < 0.003) return;
-    rainBox.set(it.box, n*4); rainD[n*2] = it.d; rainD[n*2 + 1] = it.a; n++; });
-  rainGeo.instanceCount = n;
-  rainGeo.attributes.aBox.needsUpdate = true; rainGeo.attributes.aD.needsUpdate = true;
+  BUILD.items.forEach(it => {
+    if (it.state === 0 && front >= it.th) popItem(it);
+    if (it.a < 0.003) return;
+    popBox.set(it.box, n*4); popD[n*2] = it.s; popD[n*2 + 1] = it.a; n++;
+  });
+  popGeo.instanceCount = n;
+  popGeo.attributes.aBox.needsUpdate = true; popGeo.attributes.aD.needsUpdate = true;
+  // 洇开的前沿撒闪粉
+  if (!REDUCED && front > 0.02 && front < 1.0){
+    const O = OVERVIEW.anchor, r = Math.max(0, (front - 0.07)/0.86)*1200;
+    for (let k = 0; k < 3; k++){
+      const a = Math.random()*Math.PI*2, [x, y] = ovToScreen(O[0] + Math.cos(a)*r, O[1] + Math.sin(a)*r/1.45);
+      if (x < -20 || y < -20 || x > innerWidth + 20 || y > innerHeight + 20) continue;
+      FX.add({ x, y, vx:rnd(-10, 10), vy:rnd(-40, -15), g:0, drag:1, life:rnd(0.6, 1.1), sz0:rnd(5, 10), kind:Math.random() < 0.5 ? 0 : 1,
+        color:pick1(['#ffffff', '#fff1c8', '#ffd0ec', '#d8ecff']), a0:0.8, spin:rnd(-3, 3), tw:true });
+    }
+  }
+}
+
+/* ================================================================== 入夜（参考视频）：粉色黄昏 → 蓝紫 → 夜景画；灯从扭蛋机往外逐盏亮；探照灯；烟花
+   画面调色在着色器（nightW / duskGrade），这里只管时间线和烟花 */
+const FIREWORK = { next:3 };
+function fireworkBurst(x, y, big){
+  const n = REDUCED ? 8 : big ? 30 : 22, col = pick1([['#ffd0ec', '#ffffff'], ['#d8ecff', '#ffffff'], ['#fff1b0', '#ffc4ea'], ['#c9b8ff', '#ffffff']]);
+  const sp = big ? 170 : 130;
+  for (let k = 0; k < n; k++){ const a = k/n*Math.PI*2;
+    FX.add({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp*0.9, g:26, drag:2.0, life:rnd(1.0, 1.4), sz0:rnd(6, 9), kind:k % 2, color:col[k % 2], a0:0.95, tw:true, hold:0.5 }); }
+  FX.add({ x, y, vx:0, vy:0, g:0, drag:0, life:0.35, sz0:big ? 60 : 44, kind:1, color:'#ffffff', a0:0.9, grow:0.6 });
+}
+function updateNightFX(dt){
+  if (REDUCED || OV.mode !== 'overview' || ovU.uIgnite.value < 0.6 || S.night < 0.9) return;
+  FIREWORK.next -= dt;
+  if (FIREWORK.next > 0) return;
+  FIREWORK.next = rnd(2.6, 5.5);
+  const [x, y] = ovToScreen(rnd(200, 1470), rnd(60, 380));
+  if (x > 40 && x < innerWidth - 40 && y > 40) fireworkBurst(x, y, Math.random() < 0.3);
 }
 
 /* ================================================================== ⑦ 总览布局 + 推镜头 */
 function ovCover(){ const [IW, IH] = OVERVIEW.size; return Math.max(innerWidth/IW, innerHeight/IH) * (1 + 2*OVERVIEW.parallax/Math.min(innerWidth, innerHeight)); }
 function ovLayout(first){
   const [IW, IH] = OVERVIEW.size, W = innerWidth, H = innerHeight;
+  if (!W || !H) return;                                   // 窗口还没尺寸（隐藏的 iframe / 预览面板）：不算，免得除以 0 变成 NaN
+  if (!(OV.s > 0) || !Number.isFinite(OV.ox) || !Number.isFinite(OV.oy)) first = true;
   const cx = first ? (W/H < 1 ? OVERVIEW.machine.c[0] : IW/2) : (W/2 - OV.ox)/OV.s;
   const cy = first ? IH/2 : (H/2 - OV.oy)/OV.s;
   OV.s = ovCover(); OV.ox = W/2 - cx*OV.s; OV.oy = H/2 - cy*OV.s; ovClampPan();
@@ -1884,15 +1985,15 @@ function frame(dt, t){
   // —— 总览 ——
   if (LAYER.ov){
     OV.par.lerp(OV.parT, 1 - Math.exp(-dt*2.5));
-    const amp = OV.mode === 'overview' && !REDUCED ? OVERVIEW.parallax/OV.s : 0;
+    const amp = OV.mode === 'overview' && !REDUCED ? OVERVIEW.parallax/OV.s*ovU.uBuild.value : 0;
     ovU.uPar.value.set(OV.par.x*amp, OV.par.y*amp);
     // 景深：焦点 = 光标下的深度；光标停住 2.5 秒后回到扭蛋机
     const ovIdle = performance.now() - (P.moveT || 0) > 2500 || !P.pos;
     const ovTgt = ovIdle ? 0.78 : (depthAt(DEPTH.ov, ...ovToImg(...P.pos), OVERVIEW.size) ?? 0.78);
     OV.dofD = lerp(OV.dofD ?? 0.78, ovTgt, 1 - Math.exp(-dt*(ovIdle ? 1.2 : 4)));
     ovU.uDofD.value = OV.dofD;
-    ovU.uDof.value = OV.mode === 'overview' && !REDUCED ? OVERVIEW.dof*(1 - ovU.uMist.value) : 0;
-    updateRain(dt);
+    ovU.uDof.value = OV.mode === 'overview' && !REDUCED ? OVERVIEW.dof*ovU.uBuild.value : 0;
+    updateBuild(); updateNightFX(dt);
     ovU.uView.value.set(OV.s, OV.ox, OV.oy); ovU.uHover.value = OV.hover;
     ovBub.u.uPar.value.set(-OV.par.x*amp*2, -OV.par.y*amp*2);
     const tip = $('#ovTip'), show = OV.mode === 'overview' && (TOUCH || OV.hover > 0.5);
@@ -1965,7 +2066,7 @@ function resize(){
   layoutFore();
 }
 addEventListener('resize', resize);
-mgrOV.onLoad = () => { OV.ready = true; canvas.classList.add('ready'); maybeRain(); };
+mgrOV.onLoad = () => { OV.ready = true; canvas.classList.add('ready'); maybeBuild(); };
 mgrOVLater.onLoad = () => { OV.nightReady = true; ovU.uNightT.value = S.night; };
 mgrCL.onLoad = () => { CL.ready = true; if (CL.pendingEnter){ CL.pendingEnter = false; enterMachine(); } };
 RM.addEventListener?.('change', e => { REDUCED = e.matches; ovU.uMotion.value = REDUCED ? 0.3 : 1; clU.uSway.value = REDUCED ? 0 : 1.3; clU.uCloud.value = REDUCED ? 0 : 0.16; CL.dofBase = REDUCED ? 0 : 0.7; });
@@ -1989,7 +2090,8 @@ addEventListener('keydown', e => {
 ovLayout(true); clLayout(); layoutFore(); resize(); applyNight(0);
 loop();
 // 调试：?debug 时 window.__dbg；预览窗口隐藏时 rAF 会停，用 __dbg.tick(n) 手动推进
-window.__dbg = { RAIN, startRain, segAt, OV, CL, S, ovU, clU, R, setPush, enterMachine, backToPark, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
+window.__dbg = { BUILD, startBuild, fireworkBurst, nightTransition, toggleNight,
+  replayBuild(){ BUILD.started = false; BUILD.on = false; revealG.fillStyle = '#000'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true; startBuild(); }, segAt, OV, CL, S, ovU, clU, R, setPush, enterMachine, backToPark, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
   tick(n = 1, dt = 1/60){ gsap.ticker.lagSmoothing(0); for (let i = 0; i < n; i++){ gsap.ticker.tick(); clock.elapsedTime += dt; frame(dt, clock.elapsedTime); } },
   snap(){ frame(0, clock.elapsedTime); const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height; c.getContext('2d').drawImage(canvas, 0, 0); return c.toDataURL('image/jpeg', 0.85); } };
 
