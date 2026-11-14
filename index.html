@@ -1276,6 +1276,9 @@ const SFX = {
     this.ctx = new AC({ latencyHint:'interactive' });
     const comp = this.ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
     this.master = this.ctx.createGain(); this.master.gain.value = 0.8; this.master.connect(comp); comp.connect(this.ctx.destination);
+    // 两路：音乐（音乐盒循环 + 配乐）和音效。音效响起时音乐自动让一下，不抢
+    this.music = this.ctx.createGain(); this.music.connect(this.master);
+    this.fx = this.ctx.createGain(); this.fx.connect(this.master);
     this.loading = Promise.all(this.names.map(n => fetch(`assets/sfx/${n}.m4a`).then(r => r.arrayBuffer())
       .then(ab => new Promise((ok, no) => this.ctx.decodeAudioData(ab, ok, no))).then(b => { this.buf[n] = b; }).catch(() => {})));
   },
@@ -1288,8 +1291,8 @@ const SFX = {
   startLoop(){
     if (this.loopSrc || !this.buf.musicbox_loop || this.holdLoop) return;
     const s = this.ctx.createBufferSource(); s.buffer = this.buf.musicbox_loop; s.loop = true;
-    const g = this.ctx.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(0.28, this.ctx.currentTime + 1.5);
-    s.connect(g); g.connect(this.master); s.start(); this.loopSrc = s; this.loopGain = g;
+    const g = this.ctx.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(this.LOOP_G, this.ctx.currentTime + 1.5);
+    s.connect(g); g.connect(this.music); s.start(); this.loopSrc = s; this.loopGain = g;
   },
   stopLoop(){ if (!this.loopSrc) return; const s = this.loopSrc, g = this.loopGain; g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4); setTimeout(() => s.stop(), 500); this.loopSrc = null; },
   // 整段配乐（不占音效的同时发声名额）
@@ -1297,20 +1300,39 @@ const SFX = {
     if (!this.on || !this.buf[name]) return null;
     if (this.ctx.state !== 'running') this.ctx.resume();
     const s = this.ctx.createBufferSource(); s.buffer = this.buf[name];
-    const g = this.ctx.createGain(); g.gain.value = gain; s.connect(g); g.connect(this.master); s.start(); return s;
+    const g = this.ctx.createGain(); g.gain.value = gain*0.75; s.connect(g); g.connect(this.music); s.start();
+    this.trackUntil = this.ctx.currentTime + s.buffer.duration; return s;
   },
   // 配乐响起时把背景音乐盒压低，几秒后再抬回来
   duck(sec, level = 0.06){
     if (!this.loopGain) return; const g = this.loopGain.gain, now = this.ctx.currentTime;
     g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(level, now + 0.4);
-    g.setValueAtTime(level, now + sec); g.linearRampToValueAtTime(0.28, now + sec + 2.0);
+    g.setValueAtTime(level, now + sec); g.linearRampToValueAtTime(this.LOOP_G, now + sec + 2.0);
   },
-  play(name, { gain = 1, rate = 1 } = {}){
-    if (!this.on || !this.buf[name] || this.voices > 10) return;
+  // 音效：同类音有最短间隔（太密的直接跳过）；玻璃音最多同时 3 个、全部音效最多 6 个，超出时把最早那个淡出；
+  // 玻璃音的余音缩短到 1.3 秒，不再糊成一片；配乐在放的时候音效整体小一点
+  LOOP_G:0.11, trackUntil:0, live:[], last:{},
+  GAP:{ note:0.09, hover:0.22, bubble_pop:0.08, firework:0.2, capsule_drop:0.06, whoosh:0.3 },
+  play(name, { gain = 1, rate = 1, group } = {}){
+    if (!this.on || !this.buf[name]) return;
     if (this.ctx.state !== 'running') this.ctx.resume();
+    const now = this.ctx.currentTime, note = /^(tile|bloom)_/.test(name);
+    const grp = group || (note ? 'note' : name), gap = this.GAP[grp] || 0;
+    if (gap && now - (this.last[grp] ?? -9) < gap) return;
+    this.last[grp] = now;
+    this.live = this.live.filter(v => !v.done);
+    const steal = list => { const v = list[0]; if (!v) return; v.done = true; v.g.gain.cancelScheduledValues(now); v.g.gain.setTargetAtTime(0, now, 0.06); try { v.s.stop(now + 0.4); } catch (e) {} };
+    while (note && this.live.filter(v => v.note).length >= 3) steal(this.live.filter(v => v.note && !v.done));
+    while (this.live.filter(v => !v.done).length >= 6) steal(this.live.filter(v => !v.done));
     const s = this.ctx.createBufferSource(); s.buffer = this.buf[name]; s.playbackRate.value = rate;
-    const g = this.ctx.createGain(); g.gain.value = gain; s.connect(g); g.connect(this.master);
-    this.voices++; s.onended = () => this.voices--; s.start();
+    const g = this.ctx.createGain(), k = gain*(now < this.trackUntil ? 0.6 : 1);
+    g.gain.setValueAtTime(k, now);
+    if (note){ g.gain.setValueAtTime(k, now + 0.35); g.gain.exponentialRampToValueAtTime(0.0008, now + 1.3); }
+    s.connect(g); g.connect(this.fx);
+    const v = { s, g, note, done:false }; this.live.push(v); s.onended = () => { v.done = true; };
+    s.start(); if (note) s.stop(now + 1.35);
+    // 音乐让一下：0.05 秒压到 55%，0.4 秒后慢慢回来
+    const m = this.music.gain; m.cancelScheduledValues(now); m.setTargetAtTime(0.55, now, 0.03); m.setTargetAtTime(1, now + 0.4, 0.35);
   },
 };
 document.addEventListener('visibilitychange', () => { if (!document.hidden && SFX.on && SFX.ctx) SFX.ctx.resume(); });
@@ -1486,7 +1508,7 @@ function openCapsule(){
     if (rare && !REDUCED){ gsap.fromTo(canvas, { x:0 }, { keyframes:[{ x:-6 }, { x:5 }, { x:-3 }, { x:2 }, { x:0 }], duration:.4 }); toast('金色稀有蛋 ✦'); }
     // 附近的玻璃砖依次亮一下（由近及远，音阶往上走）
     CLOSE.tiles.map((T, i) => [i, Math.hypot(T[0] - cap.x, T[1] - cap.y)]).sort((a, b) => a[1] - b[1])
-      .forEach(([i, d], n) => gsap.delayedCall(0.05 + d*0.0022, () => tileHit(i, { sound:n < 5, strength:0.7 })));
+      .forEach(([i, d], n) => gsap.delayedCall(0.05 + d*0.0022, () => tileHit(i, { sound:n < 3, strength:0.7 })));
     sproutFacilities(k);
   }, .45);
   tl.to(cap, { lift:0, duration:.45, ease:'bounce.out' }, .5);
@@ -2267,7 +2289,7 @@ let segHot = null;
 function setSegHot(s){
   if (s === segHot) return; segHot = s;
   if (s){ const [x0, y0, x1, y1] = s.box; ovU.uSeg.value.set((x0 + x1)/2, (y0 + y1)/2, (x1 - x0)/2*1.05, (y1 - y0)/2*1.15);
-    SFX.play('tile_' + (Math.abs(Math.round(s.c[0]/90 + s.c[1]/120)) % 8), { gain:0.35 }); }
+    SFX.play('tile_' + (Math.abs(Math.round(s.c[0]/90 + s.c[1]/120)) % 8), { gain:0.2, group:'hover' }); }
   gsap.to(ovU.uSegA, { value:s ? 1 : 0, duration:.25, overwrite:true });
 }
 function segPoke(s){
