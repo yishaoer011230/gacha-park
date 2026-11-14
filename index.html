@@ -269,11 +269,15 @@ const OVERVIEW = {
     night: 'assets/overview/overview_night.webp',
     lights:'assets/overview/overview_lights.webp',  // R 灯芯 · G 泛光 · B 每盏灯的相位
     depth: 'assets/overview/overview_depth.png',    // 255 = 最近
+    blur:  'assets/overview/overview_blur.webp',    // 预模糊（景深用）
+    blurN: 'assets/overview/overview_blur_night.webp',
+    segs:  'assets/overview/overview_seg.json',     // 每块玻璃台 / 设施的包围盒（tools/overview/segments.py）
   },
   machine:{ c:[836, 575], rx:122, ry:158, tip:[837, 420] },   // 扭蛋机热点椭圆 / 提示位置
   anchor:[838, 599],                          // 推镜头对齐点 = 玻璃球中心
   beam:{ o:[-60, -60] },
-  parallax:3.2,
+  parallax:14,                                // 视差：最远处的最大位移（屏幕像素）
+  dof:0.7,                                    // 景深强度：焦点跟着光标所在的深度
 };
 /* ------------------------------------------------------------------ 配置：近景（底图 1672×941 设计像素；换 2 倍图只改 src） */
 const CLOSE = {
@@ -281,6 +285,7 @@ const CLOSE = {
   src:{
     plate:'assets/closeup/closeup_day_wide.webp',
     blur: 'assets/closeup/closeup_blur.webp',      // 预模糊（移轴 / 景深用）
+    night:null,                                    // 手绘夜景（和白天逐像素对齐）；没有时用代码换色
     masks:'assets/closeup/closeup_masks.png',      // R 深度 · G 随风摆动权重（tools/closeup/masks.py）
   },
   anchor:[472, 405], ratio:3.08,                   // 和总览对齐：玻璃球中心；主图 1px = 近景 3.08px
@@ -305,7 +310,7 @@ const CLOSE = {
   valance:{ c:[472, 226], rx:202, ry:32 }, colL:[297, 300, 585], colR:[650, 300, 585],
   stanchions:[[650, 652], [760, 704], [822, 760]],
   beamBox:[0, 0, 520, 360],                          // 左上光束：光尘飘在这里
-  parallax:18,                                     // 深度视差：最远 / 最近处的最大位移（底图像素）
+  parallax:36,                                     // 深度视差：最远 / 最近处的最大位移（底图像素）
   foreFocusX:{ land:760, port:505 },               // 屏幕中心对准底图的哪一列（横屏：扭蛋机在左侧约 30%，不被左上角标题挡住）
 };
 // 一些派生量
@@ -367,12 +372,15 @@ const ovU = {
   uBeamO:{ value:new THREE.Vector2(...OVERVIEW.beam.o) },
   uBlur:{ value:0 }, uBand:{ value:240 }, uFocus:{ value:new THREE.Vector2(...OVERVIEW.anchor) },
   uDissolve:{ value:0 }, uDisC:{ value:new THREE.Vector2() }, uMotion:{ value:REDUCED ? 0.3 : 1 }, uFx:{ value:1 },
+  uBlurT:{ value:tex(OVERVIEW.src.blur, mgrOV, { mip:false }) }, uBlurN:{ value:tex(OVERVIEW.src.blurN, mgrOVLater, { mip:false }) },
+  uDof:{ value:0 }, uDofD:{ value:0.78 }, uMist:{ value:0 }, uReveal:{ value:null }, uSeg:{ value:new THREE.Vector4(0, 0, 1, 1) }, uSegA:{ value:0 },
 };
 const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
   uniforms:ovU, depthTest:false, depthWrite:false, transparent:true, premultipliedAlpha:true,
   vertexShader:`void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader:`
-    uniform sampler2D uDay, uNight, uLights, uDepth;
+    uniform sampler2D uDay, uNight, uLights, uDepth, uBlurT, uBlurN, uReveal;
+    uniform vec4 uSeg; uniform float uSegA, uDof, uDofD, uMist;
     uniform vec2 uRes, uImg, uPar, uMC, uMR, uBeamO, uFocus, uDisC;
     uniform vec3 uView;
     uniform float uDpr, uNightT, uTime, uHover, uTouch, uFocusD, uBlur, uBand, uDissolve, uMotion, uFx;
@@ -397,6 +405,12 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
           c += paint(toUV(ip + vec2(cos(a), sin(a)) * rr * rad), bias) * 0.07;
         }
       } else c = paint(uv, 0.0);
+      // 景深：焦点跟着光标所在的深度，越远离焦点越虚（推镜头时用上面的移轴，不叠加）
+      vec3 blurC = mix(texture2D(uBlurT, uv).rgb, texture2D(uBlurN, uv).rgb, uNightT);
+      if (uDof * uFx > 0.001 && uBlur < 0.001){
+        float coc = uDof * smoothstep(0.05, 0.30, abs(dep - uDofD));
+        c = mix(c, blurC, coc);
+      }
       if (uNightT * uFx > 0.001){
         vec3 L = texture2D(uLights, uv).rgb;
         float tw = 0.5 + 0.5 * sin(uTime * (1.2 + L.b * 1.8) * uMotion + L.b * 37.0);
@@ -421,6 +435,21 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
         c = screenB(c, vec3(1.0, 0.95, 0.9) * inner * hv * 0.10);
         c = mix(c, c * tint + glow, ring * hv * 0.6);
       }
+      // 玻璃台 / 设施悬停：一圈柔光
+      if (uSegA > 0.001){
+        float e = length((ip - uSeg.xy) / uSeg.zw);
+        float ring = exp(-pow((e - 1.0) / 0.3, 2.0)), inner = smoothstep(1.0, 0.2, e);
+        c = screenB(c, mix(vec3(1.0, 0.96, 0.92), vec3(0.9, 0.85, 1.0), uNightT) * inner * uSegA * 0.18);
+        c = mix(c, c * vec3(1.0, 0.93, 0.84) + vec3(0.10, 0.07, 0.04), ring * uSegA * 0.35);
+      }
+      // 开场的雾：玻璃台落下的地方雾先散开，最后整片散去
+      if (uMist > 0.001){
+        // 雾：画面去色、虚化、提亮，只剩地面的影子；落下来的那一块才恢复原样
+        float m = uMist * (1.0 - texture2D(uReveal, uv).r);
+        vec3 ghost = mix(vec3(dot(blurC, vec3(.299,.587,.114))), blurC, 0.3);
+        ghost = mix(ghost, mix(vec3(1.0, 0.95, 0.975), vec3(0.62, 0.56, 0.92), uNightT), 0.5);
+        c = mix(c, ghost, m);
+      }
       float alpha = 1.0;
       if (uDissolve > 0.0){
         float n = vnoise(sp / 70.0) * 0.6 + vnoise(sp / 22.0) * 0.4;
@@ -439,7 +468,7 @@ ovPaint.frustumCulled = false; ovScene.add(ovPaint);
 const CL = { ready:false, s:1, ox:0, oy:0, par:new THREE.Vector2(), parT:new THREE.Vector2(), hot:null, entered:false, focusD:0.7 };
 const NT = CLOSE.tiles.length;
 const clU = {
-  uPlate:{ value:tex(CLOSE.src.plate, mgrCL) }, uBlurT:{ value:tex(CLOSE.src.blur, mgrCL, { mip:false }) }, uMask:{ value:tex(CLOSE.src.masks, mgrCL, { mip:false }) },
+  uPlate:{ value:tex(CLOSE.src.plate, mgrCL) }, uPlateN:{ value:CLOSE.src.night ? tex(CLOSE.src.night, mgrCL) : null }, uHasNight:{ value:CLOSE.src.night ? 1 : 0 }, uBlurT:{ value:tex(CLOSE.src.blur, mgrCL, { mip:false }) }, uMask:{ value:tex(CLOSE.src.masks, mgrCL, { mip:false }) },
   uRes:ovU.uRes, uDpr:ovU.uDpr, uTime:ovU.uTime, uMotion:ovU.uMotion,
   uView:{ value:new THREE.Vector3(1, 0, 0) }, uImg:{ value:new THREE.Vector2(...CLOSE.size) }, uTexSize:{ value:new THREE.Vector2(...CLOSE.size) },
   uBicubic:{ value:1 }, uPar:{ value:new THREE.Vector2() }, uFocusD:{ value:0.7 }, uDofD:{ value:0.7 }, uNight:{ value:0 }, uMode:{ value:0 },
@@ -454,7 +483,8 @@ const clU = {
   uFx:ovU.uFx,
 };
 const clFS = `
-  uniform sampler2D uPlate, uBlurT, uMask;
+  uniform sampler2D uPlate, uPlateN, uBlurT, uMask;
+  uniform float uHasNight;
   uniform vec2 uRes, uImg, uTexSize, uPar;
   uniform vec3 uView, uGlobe;
   uniform float uDpr, uTime, uMotion, uBicubic, uFocusD, uDofD, uNight, uMode, uSway, uDof, uCloud, uRimY, uFx;
@@ -507,6 +537,7 @@ const clFS = `
       ip = mix(ip, c + q, w);
     }
     vec3 c = plate(ip);
+    if (uHasNight > 0.5 && uNight > 0.001) c = mix(c, texture2D(uPlateN, toUV(ip)).rgb, uNight);   // 有手绘夜景就直接淡入
     if (uMode > 0.5){
       // 玻璃球前景层：只画球里的高光（盖在程序生成的扭蛋上面），以及球下沿以下的金色底座（挡住扭蛋）
       float inG = 1.0 - smoothstep(uGlobe.z - 6.0, uGlobe.z + 2.0, length(ip - uGlobe.xy));
@@ -536,7 +567,7 @@ const clFS = `
       }
     }
     // 景深 / 移轴：和焦点深度差得越多越虚（扭蛋机在焦点上）
-    float coc = uDof * smoothstep(0.10, 0.42, abs(dep - uDofD));
+    float coc = uDof * smoothstep(0.05, 0.28, abs(dep - uDofD));
     if (coc > 0.002) c = mix(c, texture2D(uBlurT, toUV(ip)).rgb, clamp(coc, 0.0, 1.0));
     // 云影：很淡的大块软阴影，慢慢掠过（偏紫的乘法，不发灰）
     if (uCloud * uFx > 0.0){
@@ -545,7 +576,7 @@ const clFS = `
       c *= mix(vec3(1.0), vec3(0.90, 0.88, 0.96), smoothstep(0.50, 0.74, n) * uCloud * uFx);
     }
     // 夜晚：换色 + 玻璃球里的星星微微闪
-    if (uNight > 0.001){
+    if (uNight > 0.001 && uHasNight < 0.5){
       vec3 n = nightCol(c);
       float lum = dot(c, vec3(.299,.587,.114));
       float inGlobe = 1.0 - smoothstep(uGlobe.z - 30.0, uGlobe.z, length(ip - uGlobe.xy));
@@ -816,7 +847,7 @@ const BUB_FS = `
     vec3 col = mix(vec3(1.0), iri, 0.42);
     float hl = smoothstep(0.32, 0.0, length((vP - vec2(-0.36, -0.42)) * vec2(1.0, 1.7))) * edge;       // 左上一道柔和的弯月高光
     float hl2 = smoothstep(0.13, 0.0, length(vP - vec2(0.42, 0.48))) * 0.4 * edge;
-    float a = (0.03 * edge + rim * 0.42 + hl * 0.6 + hl2) * vA * (1.0 - vPop) * (1.0 - uNight * 0.25);
+    float a = (0.05 * edge + rim * 0.55 + hl * 0.7 + hl2) * vA * (1.0 - vPop) * (1.0 - uNight * 0.2);
     col = mix(col, vec3(1.0), clamp(hl + hl2, 0.0, 1.0));
     gl_FragColor = vec4(col * a, a);
   }`;
@@ -870,10 +901,10 @@ class Bubbles {
     this.g.attributes.aB.needsUpdate = true; this.g.attributes.aC.needsUpdate = true;
   }
 }
-const ovBub = new Bubbles(24, ovU.uView, ovScene, 1, OVERVIEW.size);
-const clBub = new Bubbles(44, clU.uView, clScene, 8, CLOSE.size);
-const AMBIENT = { ov:REDUCED ? 4 : 12, cl:REDUCED ? 5 : 16 };
-for (let k = 0; k < AMBIENT.ov; k++) ovBub.spawn({ y:rnd(120, 900), age:rnd(0, 8), r:rnd(11, 24), par:0.3 });
+const ovBub = new Bubbles(60, ovU.uView, ovScene, 1, OVERVIEW.size);
+const clBub = new Bubbles(70, clU.uView, clScene, 8, CLOSE.size);
+const AMBIENT = { ov:REDUCED ? 6 : 26, cl:REDUCED ? 8 : 32 };
+for (let k = 0; k < AMBIENT.ov; k++) ovBub.spawn({ y:rnd(80, 920), age:rnd(0, 10), r:rnd(9, 26), par:rnd(0.2, 1.4) });
 function clAmbientBubble(initial){
   // 近大远小：越靠下（越近）越大、视差越大；少数几颗特别近的，大而虚
   const near = Math.random() < 0.18;
@@ -883,7 +914,8 @@ function clAmbientBubble(initial){
     onGone(){ if (OV.mode === 'closeup' || OV.mode === 'pushing') setTimeout(() => clAmbientBubble(false), rnd(800, 2600)); } });
 }
 for (let k = 0; k < AMBIENT.cl; k++) clAmbientBubble(true);
-ovBub.list.forEach(b => b.onGone = () => setTimeout(() => ovBub.spawn({ par:0.3, onGone:b.onGone }), 1500));
+function ovRespawn(){ setTimeout(() => ovBub.spawn({ r:rnd(9, 26), par:rnd(0.2, 1.4), onGone:ovRespawn }), rnd(600, 2000)); }
+ovBub.list.forEach(b => b.onGone = ovRespawn);
 
 /* ================================================================== 灯珠：顶棚一圈、立柱、远处设施、珠链 */
 const BULB_LIST = [];
@@ -1465,6 +1497,7 @@ const layer = () => OV.mode === 'overview' ? { bub:ovBub, toImg:ovToImg, toScree
 
 canvas.addEventListener('pointerdown', e => {
   SFX.ctx?.resume(); P.pos = [e.clientX, e.clientY];
+  if (RAIN.on){ rainSkip(); return; }
   if (S.mode === 'card' || S.mode === 'closing') return;
   const L = layer();
   if (OV.mode === 'overview'){
@@ -1482,7 +1515,7 @@ canvas.addEventListener('pointerdown', e => {
 canvas.addEventListener('pointermove', e => {
   const x = e.clientX, y = e.clientY;
   if (e.pointerType === 'mouse'){ OV.parT.set(x/innerWidth*2 - 1, y/innerHeight*2 - 1); CL.parT.copy(OV.parT); }
-  P.pos = [x, y];
+  P.pos = [x, y]; P.moveT = performance.now();
   // 光标拖尾：按移动距离撒很淡的星光
   if (P.last && !REDUCED){
     P.trailAcc += Math.hypot(x - P.last[0], y - P.last[1]);
@@ -1509,7 +1542,9 @@ canvas.addEventListener('pointermove', e => {
 function hover(x, y){
   if (OV.mode === 'overview'){
     const hot = overMachine(x, y), bub = !!ovBub.at(...ovToImg(x, y));
-    canvas.classList.toggle('hot', hot || bub);
+    const seg = hot || RAIN.on ? null : segAt(...ovToImg(x, y));
+    setSegHot(seg);
+    canvas.classList.toggle('hot', hot || bub || !!seg);
     if (!TOUCH && hot !== (OV.hover > 0.5)) gsap.to(OV, { hover:hot ? 1 : 0, duration:hot ? .45 : .6, ease:'sine.out', overwrite:'auto' });
     return;
   }
@@ -1539,7 +1574,10 @@ canvas.addEventListener('pointerup', e => {
     }
     return;
   }
-  if (OV.mode === 'overview' && overMachine(e.clientX, e.clientY)) enterMachine();
+  if (d.strum) return;
+  if (OV.mode === 'overview' && overMachine(e.clientX, e.clientY)){ enterMachine(); return; }
+  if (OV.mode === 'overview'){ const sg = segAt(...ovToImg(e.clientX, e.clientY)); if (sg){ segPoke(sg); return; } }
+  ripple(e.clientX, e.clientY);
 });
 canvas.addEventListener('pointerleave', () => { if (!TOUCH){ gsap.to(OV, { hover:0, duration:.6, overwrite:'auto' }); gsap.to(clU.uHot.value, { w:0, duration:.3 }); CL.hot = null; } OV.parT.set(0, 0); CL.parT.set(0, 0); P.last = null; });
 canvas.addEventListener('pointercancel', () => { P.down = null; P.blow = null; S.dragging && (S.dragging = false, finishCrank()); });
@@ -1574,6 +1612,164 @@ if (TOUCH){
   else addEventListener('deviceorientation', onOrient);
 }
 
+
+
+/* ================================================================== 深度取样（景深对焦用，CPU 读一份小图） */
+function imgData(url){
+  const o = { ready:false }; const im = new Image();
+  im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently:true });
+    g.drawImage(im, 0, 0); o.w = im.width; o.h = im.height; o.d = g.getImageData(0, 0, im.width, im.height).data; o.ready = true; };
+  im.src = url; return o;
+}
+const DEPTH = { ov:imgData(OVERVIEW.src.depth), cl:imgData(CLOSE.src.masks) };
+function depthAt(o, x, y, size){
+  if (!o.ready) return null;
+  const X = clamp(Math.round(x/size[0]*o.w), 0, o.w - 1), Y = clamp(Math.round(y/size[1]*o.h), 0, o.h - 1);
+  return o.d[(Y*o.w + X)*4]/255;
+}
+
+/* ================================================================== 总览：玻璃台 / 设施（悬停发光 + 音符，点一下撒星光） */
+let SEGS = [];
+fetch(OVERVIEW.src.segs).then(r => r.json()).then(j => { SEGS = j.segs.filter(s => s.area > 600 && s.area < 40000); RAIN.data = j.segs.filter(s => s.area > 600); maybeRain(); }).catch(() => { RAIN.data = []; maybeRain(); });
+function segAt(ix, iy){
+  let best = null;
+  for (const s of SEGS){ const [x0, y0, x1, y1] = s.box; if (ix >= x0 && ix <= x1 && iy >= y0 && iy <= y1 && (!best || s.area < best.area)) best = s; }
+  return best;
+}
+let segHot = null;
+function setSegHot(s){
+  if (s === segHot) return; segHot = s;
+  if (s){ const [x0, y0, x1, y1] = s.box; ovU.uSeg.value.set((x0 + x1)/2, (y0 + y1)/2, (x1 - x0)/2*1.05, (y1 - y0)/2*1.15);
+    SFX.play('tile_' + (Math.abs(Math.round(s.c[0]/90 + s.c[1]/120)) % 8), { gain:0.35 }); }
+  gsap.to(ovU.uSegA, { value:s ? 1 : 0, duration:.25, overwrite:true });
+}
+function segPoke(s){
+  const [x, y] = ovToScreen(s.c[0], s.c[1]);
+  sparkle(x, y, { n:12, up:90, g:120, colors:[s.color, '#ffffff', '#ffe6aa'] });
+  SFX.play('tile_' + Math.floor(rnd(2, 8)), { gain:0.5 });
+  for (let k = 0; k < 3; k++) ovBub.spawn({ x:s.c[0] + rnd(-20, 20), y:s.c[1] + rnd(-10, 10), r:rnd(6, 12), vy:-rnd(30, 60), life:rnd(3, 5), fade:0.2, par:0.6 });
+}
+// 点空地：一圈光点涟漪 + 一个轻轻的音
+function ripple(x, y){
+  const n = REDUCED ? 8 : 16, col = pick1(['#ffe6aa', '#ffd0ec', '#d8ecff']);
+  for (let k = 0; k < n; k++){ const a = k/n*Math.PI*2;
+    FX.add({ x, y, vx:Math.cos(a)*120, vy:Math.sin(a)*60, g:0, drag:2.6, life:0.7, sz0:7, kind:1, color:col, a0:0.75 }); }
+  SFX.play('tile_' + Math.floor(rnd(0, 8)), { gain:0.25 });
+}
+
+/* ================================================================== 开场「玻璃台雨」
+   先盖一层奶油色薄雾；画里的每块玻璃台 / 每个设施（从主图里裁出来）从上方错落落下，带拖影；
+   落地时地面闪一圈光、那一块的雾散开，露出画里本来的样子；全部落完，雾整片散去 → 和主图 1:1。
+   有了真正的空地版主图（A1）以后，可以换成「空地 + 逐块落下」的精确版。 */
+const RAIN = { on:false, data:null, items:[], started:false };
+const revealCanvas = document.createElement('canvas'); revealCanvas.width = 418; revealCanvas.height = 236;
+const revealG = revealCanvas.getContext('2d');
+const revealTex = new THREE.CanvasTexture(revealCanvas); revealTex.colorSpace = THREE.NoColorSpace;
+ovU.uReveal.value = revealTex;
+const rainGeo = new THREE.InstancedBufferGeometry(); rainGeo.index = unitPlane.index; rainGeo.attributes.position = unitPlane.attributes.position;
+const RAIN_MAX = 160;
+const rainBox = new Float32Array(RAIN_MAX*4), rainD = new Float32Array(RAIN_MAX*2);
+rainGeo.setAttribute('aBox', new THREE.InstancedBufferAttribute(rainBox, 4)); rainGeo.setAttribute('aD', new THREE.InstancedBufferAttribute(rainD, 2));
+rainGeo.instanceCount = 0;
+const rainMesh = new THREE.Mesh(rainGeo, new THREE.ShaderMaterial({
+  uniforms:{ uView:ovU.uView, uDay:ovU.uDay, uNight:ovU.uNight, uNightT:ovU.uNightT, uImg:ovU.uImg }, transparent:true, premultipliedAlpha:true, depthTest:false, depthWrite:false, side:THREE.DoubleSide,
+  vertexShader:`
+    attribute vec4 aBox; attribute vec2 aD; uniform vec3 uView;
+    varying vec2 vIp; varying vec4 vBox; varying vec2 vD;
+    void main(){
+      vec2 l = position.xy + 0.5;
+      float streak = min(aD.x * 0.35, 90.0);                 // 拖影长度（随下落距离）
+      vec2 ip = vec2(mix(aBox.x, aBox.z, l.x), mix(aBox.y - streak, aBox.w, l.y));
+      vIp = ip; vBox = aBox; vD = aD;
+      vec2 p = (ip - vec2(0.0, aD.x)) * uView.x + uView.yz;
+      gl_Position = projectionMatrix * viewMatrix * vec4(p, 0.0, 1.0);
+    }`,
+  fragmentShader:`
+    uniform sampler2D uDay, uNight; uniform float uNightT; uniform vec2 uImg; varying vec2 vIp; varying vec4 vBox; varying vec2 vD;
+    vec2 toUV(vec2 ip){ return vec2(ip.x / uImg.x, 1.0 - ip.y / uImg.y); }
+    void main(){
+      vec2 c = (vBox.xy + vBox.zw) * 0.5, hs = (vBox.zw - vBox.xy) * 0.5 + 4.0;
+      float streak = min(vD.x * 0.35, 90.0);
+      vec4 acc = vec4(0.0);
+      for (int i = 0; i < 6; i++){
+        vec2 q = vIp + vec2(0.0, float(i) / 5.0 * streak);
+        float m = 1.0 - smoothstep(0.72, 1.0, length((q - c) / hs));
+        float w = 1.0 - float(i) / 6.0;
+        vec3 col = mix(texture2D(uDay, toUV(q)).rgb, texture2D(uNight, toUV(q)).rgb, uNightT);
+        acc += vec4(col * m, m) * w;
+      }
+      acc /= 3.5;
+      float a = clamp(acc.a, 0.0, 1.0) * vD.y;
+      if (a < 0.003) discard;
+      gl_FragColor = vec4(acc.rgb / max(acc.a, 0.001) * a, a);
+    }` }));
+rainMesh.frustumCulled = false; rainMesh.renderOrder = 0.5; ovScene.add(rainMesh);
+function rainWanted(){
+  if (Q.has('rain')) return true;
+  if (Q.has('norain') || REDUCED) return false;
+  try { return !sessionStorage.getItem('gp_rain_seen'); } catch (e) { return true; }
+}
+// 主图加载前就把雾盖上，免得先闪一下完整的画
+if (rainWanted()){ ovU.uMist.value = 1; revealG.clearRect(0, 0, 418, 236); revealTex.needsUpdate = true; }
+function maybeRain(){ if (OV.ready && RAIN.data && !RAIN.started && ovU.uMist.value > 0) startRain(); }
+function startRain(){
+  RAIN.started = true; RAIN.on = true;
+  try { sessionStorage.setItem('gp_rain_seen', '1'); } catch (e) {}
+  // 大块（摩天轮连着几块台子）切成小块，各自落下
+  const items = [];
+  RAIN.data.forEach(s => {
+    const [x0, y0, x1, y1] = s.box, w = x1 - x0, h = y1 - y0;
+    const nx = Math.ceil(w/170), ny = Math.ceil(h/170);
+    for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){
+      const bx0 = x0 + w*i/nx, bx1 = x0 + w*(i + 1)/nx, by0 = y0 + h*j/ny, by1 = y0 + h*(j + 1)/ny;
+      items.push({ box:[bx0, by0, bx1, by1], c:[(bx0 + bx1)/2, (by0 + by1)/2], r:Math.max(bx1 - bx0, by1 - by0)*0.75, color:s.color, fac:s.kind === 'facility' || nx*ny > 1, d:0, a:0, done:false });
+    }
+  });
+  // 玻璃台先落，设施后落；同类里随机错开
+  items.sort((a, b) => (a.fac - b.fac) || (Math.random() - 0.5));
+  RAIN.items = items.slice(0, RAIN_MAX);
+  const T = 2.6, nT = RAIN.items.filter(i => !i.fac).length;
+  RAIN.items.forEach((it, k) => {
+    const delay = 0.35 + (it.fac ? 1.3 + Math.random()*1.0 : (k/Math.max(1, nT))*1.6 + Math.random()*0.15);
+    it.d = 520;
+    gsap.to(it, { a:1, duration:.15, delay });
+    gsap.to(it, { d:0, duration:.5, delay, ease:'power2.in', onComplete(){ rainLand(it); } });
+  });
+  gsap.delayedCall(0.35 + T + 0.55, rainEnd);
+}
+function rainLand(it){
+  it.done = true;
+  // 按这一块的形状（包围盒的椭圆）散开雾
+  const k = 418/OVERVIEW.size[0], [x0, y0, x1, y1] = it.box;
+  const g = revealG.createRadialGradient(0, 0, 0, 0, 0, 1);
+  g.addColorStop(0, 'rgba(255,0,0,1)'); g.addColorStop(0.7, 'rgba(255,0,0,1)'); g.addColorStop(1, 'rgba(255,0,0,0)');
+  revealG.save(); revealG.globalCompositeOperation = 'lighter';
+  revealG.translate((x0 + x1)/2*k, (y0 + y1)/2*k); revealG.scale((x1 - x0)/2*k*1.2 + 1, (y1 - y0)/2*k*1.25 + 1);
+  revealG.fillStyle = g; revealG.beginPath(); revealG.arc(0, 0, 1, 0, Math.PI*2); revealG.fill(); revealG.restore();
+  revealTex.needsUpdate = true;
+  gsap.to(it, { a:0, duration:.35, delay:.1 });
+  const [x, y] = ovToScreen(it.c[0], it.c[1] + (it.box[3] - it.box[1])*0.3);
+  if (!REDUCED){ const n = 10, R0 = it.r*OV.s*0.5;
+    for (let q = 0; q < n; q++){ const a = q/n*Math.PI*2; FX.add({ x:x + Math.cos(a)*R0*0.4, y:y + Math.sin(a)*R0*0.2, vx:Math.cos(a)*R0*1.6, vy:Math.sin(a)*R0*0.6, g:0, drag:3, life:.55, sz0:6, kind:1, color:'#fff6e8', a0:0.8 }); } }
+  if (Math.random() < 0.35) SFX.play('tile_' + Math.floor(rnd(0, 8)), { gain:0.22 });
+}
+function rainEnd(){
+  if (!RAIN.on) return;
+  gsap.to(ovU.uMist, { value:0, duration:.9, ease:'sine.inOut', onComplete(){ RAIN.on = false; RAIN.items = []; rainGeo.instanceCount = 0; } });
+}
+function rainSkip(){
+  RAIN.items.forEach(it => { gsap.killTweensOf(it); it.a = 0; });
+  gsap.killTweensOf(ovU.uMist);
+  gsap.to(ovU.uMist, { value:0, duration:.4, onComplete(){ RAIN.on = false; RAIN.items = []; rainGeo.instanceCount = 0; } });
+}
+function updateRain(){
+  if (!RAIN.items.length){ rainGeo.instanceCount = 0; return; }
+  let n = 0;
+  RAIN.items.forEach(it => { if (it.a < 0.003) return;
+    rainBox.set(it.box, n*4); rainD[n*2] = it.d; rainD[n*2 + 1] = it.a; n++; });
+  rainGeo.instanceCount = n;
+  rainGeo.attributes.aBox.needsUpdate = true; rainGeo.attributes.aD.needsUpdate = true;
+}
 
 /* ================================================================== ⑦ 总览布局 + 推镜头 */
 function ovCover(){ const [IW, IH] = OVERVIEW.size; return Math.max(innerWidth/IW, innerHeight/IH) * (1 + 2*OVERVIEW.parallax/Math.min(innerWidth, innerHeight)); }
@@ -1682,7 +1878,7 @@ function perfTick(raw){
     QUAL.acc = QUAL.n = 0;
   }
 }
-CL.dofBase = REDUCED ? 0 : 0.42;
+CL.dofBase = REDUCED ? 0 : 0.7;
 function frame(dt, t){
   ovU.uTime.value = t;
   // —— 总览 ——
@@ -1690,6 +1886,13 @@ function frame(dt, t){
     OV.par.lerp(OV.parT, 1 - Math.exp(-dt*2.5));
     const amp = OV.mode === 'overview' && !REDUCED ? OVERVIEW.parallax/OV.s : 0;
     ovU.uPar.value.set(OV.par.x*amp, OV.par.y*amp);
+    // 景深：焦点 = 光标下的深度；光标停住 2.5 秒后回到扭蛋机
+    const ovIdle = performance.now() - (P.moveT || 0) > 2500 || !P.pos;
+    const ovTgt = ovIdle ? 0.78 : (depthAt(DEPTH.ov, ...ovToImg(...P.pos), OVERVIEW.size) ?? 0.78);
+    OV.dofD = lerp(OV.dofD ?? 0.78, ovTgt, 1 - Math.exp(-dt*(ovIdle ? 1.2 : 4)));
+    ovU.uDofD.value = OV.dofD;
+    ovU.uDof.value = OV.mode === 'overview' && !REDUCED ? OVERVIEW.dof*(1 - ovU.uMist.value) : 0;
+    updateRain(dt);
     ovU.uView.value.set(OV.s, OV.ox, OV.oy); ovU.uHover.value = OV.hover;
     ovBub.u.uPar.value.set(-OV.par.x*amp*2, -OV.par.y*amp*2);
     const tip = $('#ovTip'), show = OV.mode === 'overview' && (TOUCH || OV.hover > 0.5);
@@ -1707,8 +1910,11 @@ function frame(dt, t){
     const fD = depthAtY(715); clU.uFocusD.value = fD; CL.focusD = fD;
     clU.uPar.value.copy(Pv);
     // 景深：焦点跟着光标的纵向位置轻轻移动，但始终偏向扭蛋机
-    const my = P.pos ? clToImg(...P.pos)[1] : 600;
-    clU.uDofD.value = lerp(fD, depthAtY(clamp(my, 100, 940)), 0.3);
+    // 景深：焦点跟着光标下的深度走（像对焦）；光标停住 2.5 秒后慢慢回到扭蛋机
+    const idle = performance.now() - (P.moveT || 0) > 2500 || !P.pos;
+    const tgt = idle ? fD : (depthAt(DEPTH.cl, ...clToImg(...P.pos), CLOSE.size) ?? fD);
+    CL.dofD = lerp(CL.dofD ?? fD, tgt, 1 - Math.exp(-dt*(idle ? 1.2 : 4)));
+    clU.uDofD.value = CL.dofD;
     clU.uDof.value = Math.max(CL.dofBase, (CL.pushDof || 0)*0.9);
     clU.uMoon.value.w = REDUCED ? 0 : Math.sin(t*0.8)*0.035;
     // 小女孩轻轻呼吸
@@ -1759,10 +1965,10 @@ function resize(){
   layoutFore();
 }
 addEventListener('resize', resize);
-mgrOV.onLoad = () => { OV.ready = true; canvas.classList.add('ready'); };
+mgrOV.onLoad = () => { OV.ready = true; canvas.classList.add('ready'); maybeRain(); };
 mgrOVLater.onLoad = () => { OV.nightReady = true; ovU.uNightT.value = S.night; };
 mgrCL.onLoad = () => { CL.ready = true; if (CL.pendingEnter){ CL.pendingEnter = false; enterMachine(); } };
-RM.addEventListener?.('change', e => { REDUCED = e.matches; ovU.uMotion.value = REDUCED ? 0.3 : 1; clU.uSway.value = REDUCED ? 0 : 1.3; clU.uCloud.value = REDUCED ? 0 : 0.16; CL.dofBase = REDUCED ? 0 : 0.42; });
+RM.addEventListener?.('change', e => { REDUCED = e.matches; ovU.uMotion.value = REDUCED ? 0.3 : 1; clU.uSway.value = REDUCED ? 0 : 1.3; clU.uCloud.value = REDUCED ? 0 : 0.16; CL.dofBase = REDUCED ? 0 : 0.7; });
 
 $('#btnNight').onclick = toggleNight;
 $('#btnSound').onclick = () => SFX.toggle();
@@ -1783,7 +1989,7 @@ addEventListener('keydown', e => {
 ovLayout(true); clLayout(); layoutFore(); resize(); applyNight(0);
 loop();
 // 调试：?debug 时 window.__dbg；预览窗口隐藏时 rAF 会停，用 __dbg.tick(n) 手动推进
-window.__dbg = { OV, CL, S, ovU, clU, R, setPush, enterMachine, backToPark, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
+window.__dbg = { RAIN, startRain, segAt, OV, CL, S, ovU, clU, R, setPush, enterMachine, backToPark, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
   tick(n = 1, dt = 1/60){ gsap.ticker.lagSmoothing(0); for (let i = 0; i < n; i++){ gsap.ticker.tick(); clock.elapsedTime += dt; frame(dt, clock.elapsedTime); } },
   snap(){ frame(0, clock.elapsedTime); const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height; c.getContext('2d').drawImage(canvas, 0, 0); return c.toDataURL('image/jpeg', 0.85); } };
 
