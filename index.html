@@ -2848,7 +2848,7 @@ function liteMode(){ QUAL.level = 3; clU.uCloud.value = 0; CL.dofBase = 0; QUAL.
 function perfTick(raw){
   if (raw > 0.25 || document.hidden) return;
   QUAL.fAcc += raw; QUAL.fN++;
-  if (QUAL.fpsEl && QUAL.fN >= 30){ QUAL.fpsEl.textContent = `${Math.round(QUAL.fN/QUAL.fAcc)} fps · ${OV.mode} · 像素比 ${QUAL.pr} · 档位 ${QUAL.level}${QUAL.soft ? ' · 软件渲染' : ''}`; QUAL.fAcc = QUAL.fN = 0; }
+  if (QUAL.fpsEl && QUAL.fN >= 30){ QUAL.fpsEl.textContent = `${Math.round(QUAL.fN/QUAL.fAcc)} fps · ${OV.mode} · 像素比 ${QUAL.pr} · 档位 ${QUAL.level}${QUAL.soft ? ' · 软件渲染' : ''}${ERR.length ? ` · 错误 ${ERR.length}` : ''}`; QUAL.fAcc = QUAL.fN = 0; }
   if (Q.has('hq')) return;
   if (QUAL.warm < 20){ QUAL.warm++; return; }   // 刚开页的前几帧在解码贴图，不算
   if (performance.now() < QUAL.hold){ QUAL.acc = QUAL.n = 0; return; }   // 刚做完加载 / 传显卡 / 切分辨率的那一小段，不算
@@ -2948,13 +2948,39 @@ function frame(dt, t){
   if (LAYER.ov) R.render(ovScene, cam);
   R.render(fxScene, cam);
 }
-function loop(){
-  const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
-  perfTick(raw);
-  warmTick();
-  frame(dt, clock.elapsedTime);
-  requestAnimationFrame(loop);
+/* v16 防卡死：
+   - 先排下一帧再画：哪一帧报错，也只是这一帧没画好，循环不会断（以前一报错画面就永远停在那一帧）
+   - 看门狗：页面可见但超过 1.5 秒没有新的一帧，就重启循环；开场上色超时还没收尾，就直接收尾
+   - 报错、WebGL 上下文丢失都记进 ERR（?debug 左下角显示条数，控制台 __dbg.ERR 看详情） */
+const LOOP = { raf:0, last:0 }, ERR = [];
+function logErr(kind, e){
+  if (ERR.length < 30) ERR.push({ t:Math.round(performance.now()), kind, msg:String(e?.message || e), at:String(e?.stack || '').split('\n').slice(0, 3).join(' / '), mode:OV.mode, build:BUILD.on ? +ovU.uBuild.value.toFixed(2) : '-' });
+  if (ERR.length <= 3) console.error('[gacha]', kind, e);
 }
+addEventListener('error', e => logErr('error', e.error || e.message));
+addEventListener('unhandledrejection', e => logErr('promise', e.reason));
+canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); logErr('webgl', 'context lost'); });
+canvas.addEventListener('webglcontextrestored', () => { logErr('webgl', 'context restored'); LOOP.last = 0; });
+function loop(){
+  LOOP.raf = requestAnimationFrame(loop); LOOP.last = performance.now();
+  try {
+    const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
+    perfTick(raw);
+    warmTick();
+    frame(dt, clock.elapsedTime);
+  } catch (e){ logErr('frame', e); }
+}
+setInterval(() => {
+  if (document.hidden) return;
+  const now = performance.now();
+  if (LOOP.last && now - LOOP.last > 1500){ if ((LOOP.n = (LOOP.n || 0) + 1) <= 3) logErr('watchdog', 'loop restarted'); cancelAnimationFrame(LOOP.raf); LOOP.raf = requestAnimationFrame(loop); }
+  // 开场上色：按真实时间算，超过应有时长 2.5 秒还没收尾，就直接收尾（画面跳到完整的主图）
+  if (BUILD.on && BUILD.go && BUILD.t0 && now - BUILD.t0 > (BUILD_DELAY + BUILD_T + 2.5)*1000){
+    logErr('watchdog', 'build finished by timer');
+    try { buildSkip(); } catch (e){ ovU.uBuild.value = 1; BUILD.on = false; }
+    setTimeout(() => { if (BUILD.on){ gsap.killTweensOf(ovU.uBuild); ovU.uBuild.value = 1; BUILD.on = false; BUILD.items = []; popGeo.instanceCount = 0; } }, 1200);
+  }
+}, 1000);
 
 /* ================================================================== 启动 / 尺寸 / 调试 */
 function resize(){
@@ -3050,7 +3076,7 @@ addEventListener('keydown', e => {
 ovLayout(true); clLayout(); layoutFore(); resize(); applyNight(0);
 loop();
 // 调试：?debug 时 window.__dbg；预览窗口隐藏时 rAF 会停，用 __dbg.tick(n) 手动推进
-window.__dbg = { PERF, perf(){ console.table(PERF); return PERF; }, WARM, LATE, QUAL, warmTick, lateTex, BUILD, startBuild, fireworkBurst, nightTransition, toggleNight,
+window.__dbg = { ERR, LOOP, PERF, perf(){ console.table(PERF); return PERF; }, WARM, LATE, QUAL, warmTick, lateTex, BUILD, startBuild, fireworkBurst, nightTransition, toggleNight,
   replayBuild(){ BUILD.started = false; BUILD.on = false; BUILD.go = false; revealG.fillStyle = '#000'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true; startBuild(); }, segAt, OV, CL, S, ovU, clU, R, setPush, pushPlan, LAYER, enterMachine, backToPark, openCard, expandCard, collapseCard, stashCard, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
   tick(n = 1, dt = 1/60){ gsap.ticker.lagSmoothing(0); for (let i = 0; i < n; i++){ gsap.ticker.tick(); clock.elapsedTime += dt; frame(dt, clock.elapsedTime); } },
   snap(){ frame(0, clock.elapsedTime); const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height; c.getContext('2d').drawImage(canvas, 0, 0); return c.toDataURL('image/jpeg', 0.85); } };
