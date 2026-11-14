@@ -1131,12 +1131,28 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
     vec2 toUV(vec2 ip){ return vec2(ip.x / uImg.x, 1.0 - ip.y / uImg.y); }
     // 白天图 → 夜晚图 不是线性混合：先进入粉色黄昏，再沉到蓝紫色，最后才换成夜景画（两端和原画 1:1）
     float nightW(){ return smoothstep(0.28, 0.92, uNightT); }
-    vec3 paint(vec2 uv, float bias){ return mix(texture2D(uDay, uv, bias).rgb, texture2D(uNight, uv, bias).rgb, nightW()); }
+    // v28 入夜不再整张图一起变：一条暮色分界线从远处（画面上方、偏右）往近处扫过乐园，扭蛋机一带最后入夜。
+    // 分界线前面还是白天的画（越来越暖的夕阳光），后面直接是夜景画，交界处一道发光的紫色暮光带把两边融在一起。
+    // W = 这个像素入夜了多少（0 白天，1 夜景），每个像素算一次，给 paint() / 景深 / 灯共用
+    float W;
+    float sweepW(vec2 ip, float dep){
+      float s = clamp((uNightT - 0.28) / 0.64, 0.0, 1.0);
+      float th = 0.7 * dep + 0.3 * (1.0 - ip.x / uImg.x);                                  // 深度图 255 = 最近：远处、右侧先入夜
+      th += (vnoise(ip * 0.005) + 0.5 * vnoise(ip * 0.016 + 7.3) - 0.75) * 0.18;           // 云絮一样的边
+      return smoothstep(-0.14, 0.14, s * 1.75 - 0.32 - th);
+    }
+    vec3 paint(vec2 uv, float bias){ return mix(texture2D(uDay, uv, bias).rgb, texture2D(uNight, uv, bias).rgb, W); }
     vec3 duskGrade(vec3 c){
-      float pinkK = sin(clamp(uNightT / 0.55, 0.0, 1.0) * 3.14159) * 0.85;
-      float violK = sin(clamp((uNightT - 0.3) / 0.62, 0.0, 1.0) * 3.14159) * 0.7;
-      c = mix(c, c * vec3(1.05, 0.84, 0.97) + vec3(0.05, 0.0, 0.035), pinkK);
-      c = mix(c, c * vec3(0.60, 0.52, 1.02) + vec3(0.04, 0.0, 0.13), violK);
+      // 白天那一侧：粉金色的夕阳光，越接近分界线越浓
+      float sunK = smoothstep(0.0, 0.45, uNightT) * (1.0 - W) * (0.55 + 0.45 * W * 4.0);
+      c = mix(c, c * vec3(1.06, 0.86, 0.93) + vec3(0.05, 0.0, 0.03), clamp(sunK, 0.0, 1.0) * 0.85);
+      // 整体一层很淡的紫，把日夜两边统一在同一个傍晚里
+      float violK = sin(clamp((uNightT - 0.3) / 0.62, 0.0, 1.0) * 3.14159) * 0.22;
+      c = mix(c, c * vec3(0.80, 0.74, 1.02) + vec3(0.02, 0.0, 0.07), violK);
+      // 分界线上的暮光带：发光的紫粉色
+      float band = W * (1.0 - W) * 4.0;
+      c = screenB(c, vec3(0.62, 0.30, 0.92) * band * 0.30);
+      c = mix(c, c * vec3(0.86, 0.80, 1.04), band * 0.35);
       return c;
     }
     // 离扭蛋机的距离（0 = 扭蛋机，约 1 = 画面最远的角）：建园和点灯都从这里往外扩
@@ -1148,6 +1164,7 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
       float dep = texture2D(uDepth, toUV(ip)).r;
       ip -= (dep - uFocusD) * uPar;
       vec2 uv = toUV(ip);
+      W = sweepW(ip, dep);
       vec3 c;
       if (uBlur > 0.001){
         vec2 q = ip - uFocus; float d = abs(q.y) + abs(q.x) * 0.42;
@@ -1159,7 +1176,8 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
           c += paint(toUV(ip + vec2(cos(a), sin(a)) * rr * rad), bias) * 0.07;
         }
       } else c = paint(uv, 0.0);
-      float nw = nightW();
+      float nw = W;
+      float nl = max(W, smoothstep(0.30, 0.70, uNightT) * 0.6);   // 灯：暮色里的地方也先亮一点（入夜后全亮）
       // 景深：焦点跟着光标所在的深度，越远离焦点越虚（推镜头时用上面的移轴，不叠加）
       vec3 blurC = mix(texture2D(uBlurT, uv).rgb, texture2D(uBlurN, uv).rgb, nw);
       if (uDof * uFx > 0.001 && uBlur < 0.001){
@@ -1167,7 +1185,7 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
         c = mix(c, blurC, coc);
       }
       if (uNightT > 0.001 && uNightT < 0.999) c = duskGrade(c);
-      if (nw * uFx > 0.001){
+      if (nl * uFx > 0.001){
         vec3 L = texture2D(uLights, uv).rgb;
         // 点灯：从扭蛋机往外一圈圈亮起，每盏灯亮的瞬间闪一下
         float o = fromOrigin(ip) * 0.85 + L.b * 0.15, u = uIgnite * 1.2;
@@ -1178,8 +1196,8 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
         float chase = pow(0.5 + 0.5 * sin(dot(ip, vec2(0.045, 0.028)) - uTime * 4.0 * uMotion), 3.0);
         vec3 core = texture2D(uNight, uv).rgb, halo = texture2D(uNight, uv, 3.0).rgb;
         c = mix(c, halo * 0.8, nw * (1.0 - lit) * clamp(L.r * 1.3 + L.g * 0.25, 0.0, 1.0));   // 还没轮到的灯：融进周围（不是黑点）
-        c += nw * lit * (core * L.r * ((tw - 0.35) * 0.42 + chase * 0.35) + halo * L.g * ((0.35 + 0.65 * tw) * 0.30 + chase * 0.16));
-        c += nw * flash * (core * L.r * 1.1 + halo * L.g * 0.8);
+        c += nl * lit * (core * L.r * ((tw - 0.35) * 0.42 + chase * 0.35) + halo * L.g * ((0.35 + 0.65 * tw) * 0.30 + chase * 0.16));
+        c += nl * flash * (core * L.r * 1.1 + halo * L.g * 0.8);
         c = max(c, 0.0);
       }
       // 探照灯：从画面下沿射向夜空的三道光柱，慢慢左右扫
