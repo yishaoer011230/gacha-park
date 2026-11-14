@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>仲夏夜扭蛋机 · 开蛋小样</title>
+<!-- v25 开场提速：three 和开场要用的 4 张总览图跟 HTML 同时下载（原来要等 three 下完、脚本跑起来才开始下图）。
+     crossorigin 要和 THREE.ImageLoader / FileLoader 的请求方式一致，浏览器才会复用这次下载 -->
+<link rel="modulepreload" href="vendor/three.module.min.js">
+<link rel="preload" as="image" href="assets/overview/overview_day.jpg" crossorigin="anonymous" fetchpriority="high">
+<link rel="preload" as="image" href="assets/overview/overview_line.webp" crossorigin="anonymous" fetchpriority="high">
+<link rel="preload" as="image" href="assets/overview/overview_depth.png" crossorigin="anonymous">
+<link rel="preload" as="image" href="assets/overview/overview_blur.webp" crossorigin="anonymous">
+<link rel="preload" as="fetch" href="assets/overview/overview_seg.json" crossorigin="anonymous">
 <style>
   :root{
     --ink:#5b3b62; --ink-soft:#8a6a92; --pink:#ec85c3; --gold:#d9ae62;
@@ -979,8 +987,8 @@ const RARE_P = 0.05;   // 金色稀有蛋的概率（只是外观和特效更隆
 const OVERVIEW = {
   size:[1672, 941],
   src:{
-    day:   'assets/overview/overview_day.webp',
-    night: 'assets/overview/overview_night.webp',
+    day:   'assets/overview/overview_day.jpg',
+    night: 'assets/overview/overview_night.jpg',
     lights:'assets/overview/overview_lights.webp',  // R 灯芯 · G 泛光 · B 每盏灯的相位
     depth: 'assets/overview/overview_depth.png',    // 255 = 最近
     blur:  'assets/overview/overview_blur.webp',    // 预模糊（景深用）
@@ -999,7 +1007,7 @@ const OVERVIEW = {
 const CLOSE = {
   size:[1672, 941],
   src:{
-    plate:'assets/closeup/closeup_day_wide.webp',
+    plate:'assets/closeup/closeup_day_wide.jpg',
     blur: 'assets/closeup/closeup_blur.webp',      // 预模糊（移轴 / 景深用）
     night:null,                                    // 手绘夜景（和白天逐像素对齐）；没有时用代码换色
     masks:'assets/closeup/closeup_masks.png',      // R 深度 · G 随风摆动权重（tools/closeup/masks.py）
@@ -1529,7 +1537,7 @@ function updateInner(dt, t){
 
 /* —— 星形摇柄：贴在安装座上，真的绕轴转 —— */
 const CRANK = { w:512, h:354, pivot:[180.3, 184.3], k:0.15, rest:0.49 };    // 屏幕 y 向下，正角度 = 顺时针；静止时手柄朝右下   // k = 底图像素 / 摇柄贴图像素
-const crankSp = makeSprite(tex('assets/props/crank.png', mgrCL, { premul:true }), { pos:CLOSE.crank, size:[CRANK.w*CRANK.k, CRANK.h*CRANK.k], pivot:[CRANK.pivot[0]/CRANK.w, CRANK.pivot[1]/CRANK.h], order:5 });
+const crankSp = makeSprite(tex('assets/props/crank.webp', mgrCL, { premul:true }), { pos:CLOSE.crank, size:[CRANK.w*CRANK.k, CRANK.h*CRANK.k], pivot:[CRANK.pivot[0]/CRANK.w, CRANK.pivot[1]/CRANK.h], order:5 });
 crankSp.depthD = depthAtY(715);
 function setCrank(a){ crankSp.u.uRot.value = CRANK.rest + a; }
 setCrank(0);
@@ -2079,7 +2087,7 @@ const PROP = {
   balloons:    { f:'balloons',      w:350,  h:600,  foot:[166,556], by:'h', size:2.4 },
 };
 const propTexCache = {};
-function propTex(f){ return propTexCache[f] || (propTexCache[f] = tex(`assets/props/${f}.png`, undefined, { premul:true })); }
+function propTex(f){ return propTexCache[f] || (propTexCache[f] = tex(`assets/props/${f}.webp`, undefined, { premul:true })); }
 const SPROUTS = [   // 底图像素坐标（脚底）
   [['parasol', 1235, 560, { scale:0.72 }], ['wildflowers', 1150, 590], ['lavender', 1318, 585]],
   [['dais', 1395, 470], ['lavender', 1330, 480, { flip:true }], ['lavender', 1462, 492]],
@@ -3641,6 +3649,12 @@ function perfTick(raw){
   if (QUAL.soft && !Q.has('hq')) setPR(Math.min(QUAL.pr, 0.85));   // 软件渲染：先从低一点的分辨率开始，特效照旧
   if (Q.has('lite')){ liteMode(); setPR(0.75); }
   QUAL.max = QUAL.pr;   // 自动升回时不超过起始分辨率
+  // v25：大屏高分屏（iPad Pro、Retina 笔记本）开场先按约 420 万像素起步，特效一样不少；
+  // 稳定流畅后由 upgrade() 一档档升回设备原本的像素比（QUAL.max 不变）
+  if (!Q.has('hq') && !QUAL.soft && !Q.has('lite')){
+    const fit = Math.sqrt(4.2e6/(innerWidth*innerHeight)), start = [QUAL.pr, ...PR_STEPS].find(v => v <= fit + 0.01);
+    if (start && start < QUAL.pr - 0.01) setPR(start);
+  }
 })();
 CL.dofBase = REDUCED ? 0 : 0.7;
 // 光标停住 2.5 秒（或手机没有陀螺仪）时，画面自己慢慢左右轻晃
@@ -3804,7 +3818,10 @@ mgrCL.onLoad = () => {
     () => { try { R.compile(clScene, cam); } catch (e) {} },
     () => { CL.ready = true; computeMatch(); if (CL.pendingEnter){ CL.pendingEnter = false; enterMachine(); } });
 };
-function startLate(){ if (LATE.started) return; LATE.started = true; LATE.q.splice(0).forEach(f => f()); }
+function startLate(){ if (LATE.started) return; LATE.started = true; LATE.q.splice(0).forEach(f => f());
+  // v25：开场「长出来」的设施图也趁等点击时先下载进浏览器缓存（只下载，不传显卡），慢网下不会晚到
+  [...new Set(Object.values(PROP).map(p => p.f))].forEach(f => { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = `assets/props/${f}.webp`; });
+}
 setTimeout(startLate, 8000);   // 总览图万一一直没到齐，也不要让近景永远不下载
 // 安静的时候才做：线稿停着等点击、开场上色结束后的总览；用户急着进扭蛋机时一次做完
 function warmOK(){ return CL.pendingEnter || (OV.mode === 'overview' && (!BUILD.on || !BUILD.go)); }
