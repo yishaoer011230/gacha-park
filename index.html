@@ -147,7 +147,9 @@
   .ac-tag::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px;background:var(--c,#b79ae3);box-shadow:0 0 6px var(--c,#b79ae3)}
   /* 资管平台展开：顶部分段切换 */
   .av{position:absolute;inset:0;display:flex;flex-direction:column}
-  .seg{display:flex;gap:6px;padding:14px 22px 0}
+  .seg{display:flex;gap:6px;padding:14px 22px 2px;overflow-x:auto;scrollbar-width:none}
+  .seg button{flex:none;white-space:nowrap}
+  @media (max-width:720px){ .seg{padding:10px 12px 2px} .seg button{padding:6px 12px;font-size:12px} }
   .seg button{border:1px solid rgba(200,150,210,.45);background:rgba(255,255,255,.35);color:var(--ink);border-radius:999px;padding:7px 16px;font-size:13px;transition:background .25s,box-shadow .25s}
   .seg button.on{background:#fff;border-color:rgba(183,154,227,.8);box-shadow:0 6px 16px -6px rgba(150,110,200,.5);font-weight:600}
   body.night .seg button{background:rgba(255,255,255,.08)} body.night .seg button.on{background:rgba(255,255,255,.22)}
@@ -398,6 +400,121 @@
   .sl-act .btn{padding:9px 18px;font-size:13.5px}
   .sl-act .btn.ghost{color:#5b3b62}
   @media (prefers-reduced-motion:reduce){ .rk-tip{display:none} }
+
+  /* v12：资管扭蛋 = 小机柜摆件（亮灯 = 主要做的，半透明 = 协作的，虚线 = 规划中；v14 起不再逐层标「谁做的」） */
+  /* v15：机柜本体换成手绘图（assets/toy/cabinet_body.webp，开口位置见 cabinet_meta.json），抽屉面板也是手绘图，代码只负责染色、文字和拉出来 */
+  .cab{position:relative;width:300px;height:566px;scale:1.02;margin:10px 24px 20px;perspective:1100px;perspective-origin:50% 12%;user-select:none;-webkit-user-select:none;--face:url(assets/toy/drawer_face.webp)}
+  .cab-sh{position:absolute;left:40px;top:492px;width:220px;height:30px;border-radius:50%;background:radial-gradient(closest-side,rgba(120,50,110,.3),transparent);filter:blur(3px)}
+  .cab-img{position:absolute;left:0;top:0;width:300px;height:auto;pointer-events:none;-webkit-user-drag:none;filter:drop-shadow(0 10px 14px rgba(150,80,140,.16))}
+  body.night .cab-img{filter:brightness(.86) saturate(.95) drop-shadow(0 10px 14px rgba(20,10,60,.35))}
+  /* 开口：768 宽图里是 [98,244,671,1175]，显示宽 300 → ×0.3906 */
+  .cab-sc{position:absolute;left:38px;top:95px;width:224px;height:364px;transform-style:preserve-3d}
+  .dw{position:absolute;left:6px;width:212px;height:40px;padding:0;border:0;background:none;cursor:pointer;transform-style:preserve-3d;--z:0px;transform:translateZ(var(--z));
+    transition:transform .38s cubic-bezier(.25,1.4,.4,1);font:inherit;color:#5b3b62}
+  .dw.hot,.dw:focus-visible{--z:44px;outline:none}
+  .dw-in{position:absolute;inset:0;transform-style:preserve-3d}
+  .dw-f,.dw-t{position:absolute}
+  .dw-s{display:none}
+  .dw-f{inset:0;display:flex;align-items:center;gap:7px;padding:0 12px 0 13px;border-radius:9px;font-size:12px;text-align:left;box-sizing:border-box;
+    background:var(--face) center/100% 100% no-repeat;filter:drop-shadow(0 2px 3px rgba(150,90,150,.18))}
+  .dw-f::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 30%,transparent),color-mix(in srgb,var(--c) 62%,transparent));
+    mix-blend-mode:multiply;-webkit-mask:var(--face) center/100% 100% no-repeat;mask:var(--face) center/100% 100% no-repeat;opacity:0}
+  .dw-f > *{position:relative;z-index:1}
+  .dw-f b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;letter-spacing:.01em}
+  .dw-f em{flex:none;font-style:normal;font-size:9.5px;letter-spacing:.05em;opacity:.75}
+  .hdl{flex:none;width:15px;height:4px;border-radius:3px;background:linear-gradient(180deg,#fbe3b0,#d9a85a);box-shadow:0 1px 1px rgba(140,90,30,.35)}
+  .dw-t{left:5px;top:0;width:calc(100% - 10px);height:64px;transform-origin:top;transform:rotateX(-90deg);border-radius:4px;background:linear-gradient(180deg,#f6ecf8,#e9dbf3)}
+  .led{flex:none;width:7px;height:7px;border-radius:50%;background:#d9cde3;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+  .dw.mine .dw-f::before{opacity:1}
+  .dw.mine .dw-t{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 40%,#fff),color-mix(in srgb,var(--c) 16%,#fff))}
+  .dw.mine.lit .led{background:#6fe0a1;box-shadow:0 0 6px 1px rgba(111,224,161,.9);animation:ledBlink 2.6s var(--d) infinite steps(1)}
+  @keyframes ledBlink{0%,100%{opacity:1}46%{opacity:.35}52%{opacity:1}}
+  .dw.co .dw-f{color:#8a6a92;opacity:.78}
+  .dw.co .dw-t{background:rgba(255,255,255,.35)}
+  .dw.co.lit .led{background:#ffc96b;box-shadow:0 0 5px rgba(255,201,107,.8)}
+  .dw.plan .dw-f{background:rgba(255,255,255,.18);filter:none;outline:1.5px dashed rgba(194,84,157,.6);outline-offset:-2px;color:#c2549d}
+  .dw.plan .dw-t,.dw.plan .hdl{display:none}
+  .dw.plan .dw-f::after{content:"";position:absolute;right:-30px;top:-34px;width:76px;height:76px;z-index:2;background:url(assets/toy/sparkle.webp) center/contain no-repeat;pointer-events:none}
+  .dw.plan.lit .dw-f::after{animation:twk 2.4s ease-in-out infinite}
+  .dw.plan .led{background:none;box-shadow:none;width:auto;height:auto;font-style:normal;font-size:10px;line-height:1} .dw.plan .led::before{content:"✦"}
+  .dw.plan.lit .led{animation:twk 1.8s ease-in-out infinite}
+  @keyframes twk{50%{opacity:.35;transform:scale(.75)}}
+  .dw.hot .dw-f{filter:brightness(1.05) drop-shadow(0 8px 10px rgba(150,90,150,.28))}
+  .cab-cap{position:absolute;left:50%;top:516px;transform:translateX(-50%);width:290px;min-height:40px;padding:8px 12px;box-sizing:border-box;border-radius:12px;font-size:11.5px;line-height:1.55;
+    color:var(--ink);background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .cc-lg,.olg{display:flex;justify-content:center;gap:12px;white-space:nowrap}
+  .cab-cap .cc-lg{display:block} .cab-cap .cc-lg span{display:block;text-align:center;white-space:normal;color:var(--ink-soft)} .cab-cap .cc-lg b{display:block;color:var(--ink);font-size:12.5px;letter-spacing:.06em}
+  .cc-lg span,.olg span{display:inline-flex;align-items:center;gap:5px}
+  .cc-d{display:none} .cab-cap.on .cc-lg{display:none} .cab-cap.on .cc-d{display:block}
+  .cc-d b{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:1px}
+  .lg{display:inline-block;width:10px;height:10px;border-radius:3px;flex:none}
+  .lg.mine{background:linear-gradient(135deg,#f49ac8,#b79ae3);box-shadow:0 0 5px rgba(244,154,200,.7)}
+  .lg.co{background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(170,140,200,.7)}
+  .lg.plan{border:1.5px dashed #c2549d;box-sizing:border-box}
+  em.mine,em.co,em.plan{font-style:normal;font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px;white-space:nowrap}
+  em.mine{background:#fde3f1;color:#c2549d} em.co{background:#efe8f7;color:#8a6a92} em.plan{border:1px dashed #c2549d;color:#c2549d}
+  body.night em.mine{background:rgba(255,157,223,.22);color:#ffc2ea} body.night em.co{background:rgba(255,255,255,.12);color:#d9cdf5} body.night em.plan{color:#ffb1e3;border-color:#ffb1e3}
+  .slip.asset .sl-sum{font-size:12.5px;line-height:1.7}
+  .sl-tags.plan span{background:rgba(255,255,255,.4);box-shadow:none;outline:1.5px dashed rgba(194,84,157,.6);outline-offset:-1.5px;color:#b0478d}
+  @media (max-aspect-ratio:1/1){ .cab{margin:10px 24px 64px} }
+
+  /* 资管展开：「我做了什么」 */
+  .minev{position:absolute;inset:0;display:grid;grid-template-columns:290px minmax(0,1fr);gap:20px;padding:16px 22px 20px}
+  .own{display:flex;flex-direction:column;gap:5px;overflow:auto;padding-right:2px;scrollbar-width:thin;scrollbar-color:#f1b9d6 transparent}
+  .oh{font-size:14px;font-weight:700;padding:2px 2px 6px}
+  .oh small{display:block;font-size:11px;font-weight:400;color:var(--ink-soft);margin-top:2px}
+  .ow{flex:none;display:flex;gap:9px;align-items:flex-start;padding:7px 10px;border-radius:12px;cursor:pointer;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.4);transition:transform .25s,background .25s,box-shadow .25s}
+  .ow .lg{margin-top:4px}
+  .ow.mine .lg{background:var(--c);box-shadow:0 0 6px var(--c)}
+  .ow b{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:13px}
+  .ow span{display:block;font-size:11px;line-height:1.45;color:var(--ink-soft);margin-top:2px}
+  .ow.co{background:rgba(255,255,255,.22)} .ow.plan{background:transparent;border:1.5px dashed rgba(194,84,157,.4)}
+  .ow:hover{transform:translateX(3px);background:rgba(255,255,255,.7)}
+  .ow.on{background:#fff;border-color:rgba(236,133,195,.55);box-shadow:0 8px 20px -6px rgba(200,110,180,.4)}
+  body.night .ow{background:rgba(255,255,255,.07);border-color:rgba(190,170,255,.2)} body.night .ow.on{background:rgba(255,255,255,.18)}
+  .olg{margin-top:auto;padding-top:8px;font-size:11px;color:var(--ink-soft);justify-content:flex-start}
+  .cases{position:relative;overflow:auto;display:flex;flex-direction:column;gap:12px;padding:2px 6px 2px 2px;scrollbar-width:thin;scrollbar-color:#f1b9d6 transparent}
+  .cs{flex:none;border-radius:16px;padding:14px 16px 15px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 24px -14px rgba(150,80,150,.35);transition:box-shadow .3s,border-color .3s}
+  body.night .cs{background:rgba(255,255,255,.09);border-color:rgba(190,170,255,.25)}
+  .cs.hot{border-color:#f39bd0;box-shadow:0 0 0 2px rgba(243,155,208,.35),0 10px 24px -14px rgba(150,80,150,.35)}
+  .cs.pulse{animation:csPulse 1.1s ease-out}
+  @keyframes csPulse{0%{box-shadow:0 0 0 0 rgba(243,155,208,.75)}100%{box-shadow:0 0 0 16px rgba(243,155,208,0)}}
+  .cs header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .cs .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,#f39bd0,#b79ae3);flex:none}
+  .cs h4{margin:0;font-size:15.5px}
+  .cs header > em{font-style:normal;font-size:11px;color:#c2549d;background:#fde3f1;padding:2px 9px;border-radius:999px}
+  body.night .cs header > em{background:rgba(255,157,223,.2);color:#ffc2ea}
+  .qdr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .qdr small{display:block;font-size:10.5px;letter-spacing:.18em;color:var(--ink-soft);margin-bottom:3px}
+  .qdr p{margin:0;font-size:12.5px;line-height:1.7}
+  .qdr > div:last-child p{color:#b0478d;font-weight:600} body.night .qdr > div:last-child p{color:#ffc2ea}
+  .cs.next{background:transparent;border:1.5px dashed rgba(194,84,157,.45);box-shadow:none}
+  .cs.next .n{background:none;color:#c2549d;border:1.5px dashed #c2549d;box-sizing:border-box}
+  .nxs{display:flex;align-items:stretch;gap:8px}
+  .nx{flex:1;min-width:0;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.45);font-size:12px;line-height:1.55;color:var(--ink-soft)}
+  body.night .nx{background:rgba(255,255,255,.07)}
+  .nx b{display:block;font-size:13px;color:var(--ink);margin-bottom:2px}
+  .nx .n{width:18px;height:18px;font-size:10px;float:right;background:none;color:#c2549d;border:1px dashed #c2549d;box-sizing:border-box}
+  .arw{align-self:center;font-style:normal;color:#c2549d}
+  @media (max-width:820px){
+    .minev{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);padding:12px;gap:10px}
+    .own{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding-bottom:4px}.oh,.olg{display:none}
+    .ow{flex:none;width:200px}.ow span{display:none}
+    .qdr{grid-template-columns:1fr;gap:8px}
+    .nxs{flex-direction:column}.arw{display:none}
+  }
+
+  /* 「关于我」封面 */
+  .art.about{background:radial-gradient(circle at 25% 20%,#fff 0%,transparent 45%),linear-gradient(135deg,#fff3d6,#fff0f6 55%,#f3e6ff)}
+  .ab{position:absolute;inset:0;display:grid;grid-template-rows:1fr auto;place-items:center;padding:18px 18px 22px}
+  .ab-q{font-size:24px;font-weight:800;line-height:1.35;text-align:center;color:#5b3b62;letter-spacing:.04em}
+  .ab-caps{display:flex;gap:26px}
+  .ab-caps figure{margin:0;text-align:center;animation:abBob 3s var(--d) ease-in-out infinite}
+  .ab-caps img{width:62px;height:62px;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(150,90,160,.28))}
+  .ab-caps figcaption{font-size:11px;font-weight:600;color:#8a6a92;margin-top:2px}
+  @keyframes abBob{50%{transform:translateY(-5px)}}
+  .ab-chip{position:absolute;left:12px;top:12px;font-size:11px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.75);color:#a07898}
+  @media (prefers-reduced-motion:reduce){ .ab-caps figure,.dw.mine.lit .led,.dw.plan.lit .led{animation:none} }
   /* 流畅模式（显卡弱 / Linux 软件渲染）：毛玻璃换成实色，省掉每帧的背景模糊 */
   body.lite *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
   body.lite{--glass:rgba(255,246,252,.94)} body.lite.night{--glass:rgba(48,40,104,.95)}
@@ -474,15 +591,15 @@ const PROJECTS = [
   { id:'site', color:'#f49ac8', cap:'peach', no:'CAPSULE 01', title:'海外站 · doshglobal.com', role:'图片选用 · 版面层级 · 落地',
     sum:'集团卫浴与建筑陶瓷的海外官网，展示 Monarch 卫浴与 Oceano 瓷砖。首页与六个内页的图片和版面，由我出方案并落地。',
     tags:['官网改版','视觉选图','版面层级','后台手册'], icon:'tile', url:'https://www.doshglobal.com' },
-  { id:'asset', color:'#b79ae3', cap:'purple', no:'CAPSULE 02', title:'水华资管平台 · 算力资产台账', role:'资产域负责人 · 两人团队',
-    sum:'GPU 服务器从到货、验收上架到租赁结算的全生命周期台账。我主写到货验收和资产域审批；审批引擎和项目域由另一位开发负责，我做接入和合并上线。',
+  { id:'asset', color:'#b79ae3', cap:'purple', no:'CAPSULE 02', title:'水华资管平台 · 算力资产台账', role:'资产域 · 两人团队',
+    sum:'GPU 服务器从到货、验收上架到租赁结算的全生命周期台账。我做资产这一半：到货验收、审批点和流程可视化，也负责把各条分支合并上线。',
     tags:['到货验收','审批点 × 11','流程可视化','合并收口'], icon:'server', url:'https://sham.do-sh.top',
     stamp:['ASSET · RECEIVING · ACCEPTED ·', '已验收'], slipLink:false,
     next:{ h:'附赠贴纸 · 下一步（规划中）', tags:['手机扫码验收','移动审批','Agent 发起审批单'] } },
   { id:'research', color:'#8cd7ea', cap:'blue', no:'CAPSULE 03', title:'算力控股调研系统', role:'资料解析 · 报告 Agent · 引用回查',
     sum:'把企业资料变成每个结论都能指回来源的可研报告——9 章、61 条引用，无法确证的内容单列「待核实」。',
     tags:['Agent 流水线','证据链','可研报告','引用回查'], icon:'doc' },
-  { id:'about', color:'#ffd98a', cap:'yellow', no:'SECRET', title:'关于我', role:'产品 × 全栈 · 把业务讲清楚，再亲手做出来',
+  { id:'about', color:'#ffd98a', cap:'yellow', no:'SECRET', title:'关于我', role:'产品 × 全栈 · 从需求、设计到落地',
     sum:'我习惯先把业务口述整理成术语表、字段字典和接口契约，再自己写代码落地。做过集团海外官网、算力资产平台，还有带引用回查的调研 Agent。接下来想做的是：让业务系统可以被 Agent 安全地调用。',
     tags:['需求 → 契约 → 代码','B 端系统','业务 × Agent'], icon:'star' },
 ];
@@ -551,15 +668,25 @@ const floorScale = y => clamp(0.62 + 0.38*(y - 250)/(800 - 250), 0.5, 1.15);   /
 /* ------------------------------------------------------------------ 渲染器 */
 const canvas = $('#ov');
 const R = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:true, premultipliedAlpha:true, powerPreference:'high-performance' });
-const QUAL = { max:Math.min(devicePixelRatio, 2), pr:Math.min(devicePixelRatio, 2), acc:0, n:0, warm:0, level:0, fpsEl:null, fAcc:0, fN:0 };
+const QUAL = { max:Math.min(devicePixelRatio, 2), pr:Math.min(devicePixelRatio, 2), acc:0, n:0, warm:0, level:0, fpsEl:null, fAcc:0, fN:0, hold:0, good:0, fail:{} };
 R.setPixelRatio(QUAL.pr); R.setSize(innerWidth, innerHeight, false); R.setClearColor(0x000000, 0); R.autoClear = false;
 const cam = new THREE.OrthographicCamera(0, innerWidth, 0, innerHeight, -10, 10); cam.position.z = 5;
 const clScene = new THREE.Scene(), ovScene = new THREE.Scene(), fxScene = new THREE.Scene();
 const unitPlane = new THREE.PlaneGeometry(1, 1);
 
 const mgrOV = new THREE.LoadingManager(), mgrOVLater = new THREE.LoadingManager(), mgrCL = new THREE.LoadingManager();
+/* v13 启动分批（不减特效，只改「什么时候做」）：
+   1. 开局只下载总览要用的图；总览图到齐后，才开始下载夜景和近景的图（不抢网速）
+   2. 夜景 / 近景的图下载好以后先不传进显卡，等画面安静时（线稿停着等点击、或开场上色结束后）每隔几帧传一张
+   3. 着色器在总览显示之前就先编译好 */
+const LATE = { started:false, q:[] };      // 等总览图到齐再开始下载
+const WARM = { q:[], skip:0 };             // 等画面安静时再做的重活（传显卡 / 解码 / 编译），一帧只做一件
+const lateTex = new Map([[mgrOVLater, []], [mgrCL, []]]);   // 每个管理器下晚到的贴图
 function tex(url, mgr, { mip = true, premul = false } = {}){
-  const t = new THREE.TextureLoader(mgr).load(url);
+  const t = new THREE.Texture(), late = lateTex.has(mgr);
+  // 晚到的图：只记下图片，不标 needsUpdate（three 就不会在下一帧自己去传显卡）；由 WARM 队列在安静的帧里上传
+  const go = () => new THREE.ImageLoader(mgr).load(url, img => { t.image = img; if (late) t.userData.pend = true; else t.needsUpdate = true; });
+  if (late){ lateTex.get(mgr).push(t); LATE.q.push(go); } else go();
   t.colorSpace = THREE.NoColorSpace; t.generateMipmaps = mip; t.premultiplyAlpha = premul;
   t.minFilter = mip ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
   t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 4;
@@ -963,7 +1090,10 @@ const atlasCanvas = document.createElement('canvas'); atlasCanvas.width = 1024; 
 const atlasTex = new THREE.CanvasTexture(atlasCanvas); atlasTex.colorSpace = THREE.NoColorSpace; atlasTex.premultiplyAlpha = true;
 {
   let n = 0;
-  CAPS.forEach((name, i) => { const img = new Image(); img.onload = () => { atlasCanvas.getContext('2d').drawImage(img, (i % 4)*256, Math.floor(i/4)*256, 256, 256); if (++n === CAPS.length) atlasTex.needsUpdate = true; }; img.src = `assets/capsules/256/capsule_${name}.webp`; });
+  const imgs = CAPS.map(() => new Image());
+  CAPS.forEach((name, i) => { imgs[i].onload = () => { if (++n === CAPS.length) WARM.q.push(() => {   // 七张都到了，在安静的帧里画进图集
+      const g = atlasCanvas.getContext('2d'); imgs.forEach((im, j) => g.drawImage(im, (j % 4)*256, Math.floor(j/4)*256, 256, 256)); atlasTex.needsUpdate = true; R.initTexture(atlasTex); }); };
+    LATE.q.push(() => { imgs[i].src = `assets/capsules/256/capsule_${name}.webp`; }); });
 }
 const INNER = [];
 {
@@ -1298,8 +1428,12 @@ const SFX = {
     // 两路：音乐（音乐盒循环 + 配乐）和音效。音效响起时音乐自动让一下，不抢
     this.music = this.ctx.createGain(); this.music.connect(this.master);
     this.fx = this.ctx.createGain(); this.fx.connect(this.master);
-    this.loading = Promise.all(this.names.map(n => fetch(`assets/sfx/${n}.m4a`).then(r => r.arrayBuffer())
-      .then(ab => new Promise((ok, no) => this.ctx.decodeAudioData(ab, ok, no))).then(b => { this.buf[n] = b; }).catch(() => {})));
+    // v13：开场要用的先下（开场配乐、八音盒、上色时的音阶），其余的等这几个好了再下，开场不用等全部
+    const load = n => fetch(`assets/sfx/${n}.m4a`).then(r => r.arrayBuffer())
+      .then(ab => new Promise((ok, no) => this.ctx.decodeAudioData(ab, ok, no))).then(b => { this.buf[n] = b; }).catch(() => {});
+    const first = ['intro_build', 'musicbox_loop', ...[0,1,2,3,4,5,6,7].map(k => 'bloom_' + k)];
+    this.loading = Promise.all(first.map(load));
+    this.loading.then(() => Promise.all(this.names.filter(n => !first.includes(n)).map(load)));
   },
   toggle(){
     this.ensure(); if (!this.ctx) return;
@@ -1621,11 +1755,17 @@ function assetCover(){
     <div class="cst">${layers}</div>${labs}
     <div class="sc-sheen"></div><span class="sc-chip">真实界面 · ${ASSET_UI.length} 层</span>${tw}</div>`;
 }
+// 「关于我」封面：前三颗扭蛋排成一排，是我做过的三件事
+function aboutCover(){
+  const caps = PROJECTS.slice(0, 3).map((q, i) => `<figure style="--d:${i*.12}s"><img src="assets/capsules/256/capsule_${q.cap}.webp" alt=""><figcaption>${['海外官网', '资管平台', '调研 Agent'][i]}</figcaption></figure>`).join('');
+  return `<div class="ab"><div class="ab-q">把业务讲清楚，<br>再亲手做出来。</div><div class="ab-caps">${caps}</div><span class="ab-chip">做过的三颗扭蛋</span></div>`;
+}
 function fillCard(k){
   const p = PROJECTS[k];
-  art.classList.toggle('site', p.id === 'site' || p.id === 'asset'); art.classList.toggle('asset', p.id === 'asset');
+  art.classList.toggle('site', p.id === 'site' || p.id === 'asset'); art.classList.toggle('asset', p.id === 'asset'); art.classList.toggle('about', p.id === 'about');
   if (p.id === 'site'){ art.style.background = ''; art.innerHTML = siteCover(); }
   else if (p.id === 'asset'){ art.style.background = ''; art.innerHTML = assetCover(); }
+  else if (p.id === 'about'){ art.style.background = ''; art.innerHTML = aboutCover(); }
   else {
     art.style.background = `radial-gradient(circle at 30% 25%, #fff 0%, transparent 45%), linear-gradient(135deg, ${p.color}55, #fff0f6 60%, ${p.color}88)`;
     art.innerHTML = ICONS[p.icon] + '<span class="ph">封面图待替换</span>';
@@ -1697,26 +1837,26 @@ function buildSite(body, start = 0){
 }
 
 function buildAsset(body, focus = -1){
-  body.innerHTML = `<div class="av"><div class="seg"><button data-t="mine">我做了什么</button><button data-t="ui">平台界面</button><button data-t="hw">硬件拆解</button><button data-t="layers">产品结构</button><button data-t="entry">平台入口</button></div><div class="avb"></div></div>`;
+  body.innerHTML = `<div class="av"><div class="seg"><button data-t="mine">做了什么</button><button data-t="ui">平台界面</button><button data-t="hw">硬件拆解</button><button data-t="layers">产品结构</button><button data-t="entry">平台入口</button></div><div class="avb"></div></div>`;
   const box = body.querySelector('.avb'), btns = [...body.querySelectorAll('.seg button')];
   const views = { mine:b => buildMine(b, focus), ui:buildUI, hw:buildHW, layers:buildLayers, entry:buildEntry };
   const show = t => { btns.forEach(b => b.classList.toggle('on', b.dataset.t === t)); box.innerHTML = ''; views[t](box); focus = -1; };
   btns.forEach(b => b.onclick = () => { if (!b.classList.contains('on')) show(b.dataset.t); });
   show('mine');
 }
-/* 「我做了什么」：左边是机柜的每一层（谁写的一眼分清），右边三个案例 + 下一步 */
+/* 「做了什么」：左边是机柜的七层，右边三个案例 + 下一步 */
 const ASSET_CASES = [
-  { t:'到货逐件验收', k:'我主写',
+  { t:'到货逐件验收', k:'到货',
     q:'到货明细和采购申报对不上；验收结论被改过以后，说不清当时验的是什么。',
     d:'按采购申报逐件核对 SN；每次验收存一版、不覆盖旧版，审批生效时冻结整批快照。采购能看到验收结果，到货确认只能由机房做。',
     r:'每台机器都能追溯到哪一批到货、谁验的、当时的结论。配有专项测试。' },
-  { t:'所有写操作都走审批', k:'审批点由我定义 · 引擎由另一位开发负责',
+  { t:'所有写操作都走审批', k:'审批',
     q:'资产状态、机柜位置、SN 这些关键字段，原来好几个入口都能直接改。',
     d:'资产域定义 11 个审批点，写操作只能经审批引擎生效；按风险配审批人，不能自己批自己。再做流程图：每单卡在哪一环、等了多久。',
     r:'每次改动都有单据可查。这些审批点也是以后接 Agent 的口子：Agent 只能发起审批单，不能直接改数据。' },
-  { t:'多分支合并收口', k:'我负责',
+  { t:'多分支合并收口', k:'工程协作',
     q:'多人并行开发：数据库迁移编号撞车，合并时字段被吃掉，同一个状态在不同页面口径不一样。',
-    d:'由我统一并分支：重排迁移、修主干的测试和类型构建，对齐资产状态七值、可租口径和看板下钻，给列表接口设 SQL 查询次数预算。',
+    d:'统一并分支：重排迁移、修主干的测试和类型构建，对齐资产状态七值、可租口径和看板下钻，给列表接口设 SQL 查询次数预算。',
     r:'主干始终能构建、测试通过，各页面的数字对得上。' },
 ];
 const ASSET_NEXT = [
@@ -1725,12 +1865,11 @@ const ASSET_NEXT = [
   ['Agent 发起审批单', '用一句话发起调拨、报修；Agent 只能起草，由人确认后才生效'],
 ];
 function buildMine(body, focus){
-  const own = ASSET_RACK.map(([kind, n, t, c], i) => `<div class="ow ${kind}" data-i="${i}" data-c="${c}" style="--c:${RACK_C[i] || '#fff'}"><i class="lg ${kind}"></i><div><b>${n}<em class="${kind}">${RACK_BADGE[kind]}</em></b><span>${t}</span></div></div>`).join('');
+  const own = ASSET_RACK.map(([kind, n, t, c], i) => `<div class="ow ${kind}" data-i="${i}" data-c="${c}" style="--c:${RACK_C[i] || '#fff'}"><i class="lg ${kind}"></i><div><b>${n}${RACK_BADGE[kind] ? `<em class="${kind}">${RACK_BADGE[kind]}</em>` : ''}</b><span>${t}</span></div></div>`).join('');
   const cases = ASSET_CASES.map((c, i) => `<article class="cs" data-c="${i}"><header><span class="n">0${i + 1}</span><h4>${c.t}</h4><em>${c.k}</em></header>
       <div class="qdr"><div><small>问题</small><p>${c.q}</p></div><div><small>我的做法</small><p>${c.d}</p></div><div><small>结果</small><p>${c.r}</p></div></div></article>`).join('');
   const nx = ASSET_NEXT.map(([n, t], i) => `<div class="nx"><span class="n">${i + 1}</span><b>${n}</b><span>${t}</span></div>`).join('<i class="arw">→</i>');
-  body.innerHTML = `<div class="mine"><aside class="own"><div class="oh">我在这套系统里的位置<small>两人团队 · 从下往上是资产的一生</small></div>${own}
-      <div class="olg">${RACK_LEGEND}</div></aside>
+  body.innerHTML = `<div class="minev"><aside class="own"><div class="oh">系统的七层<small>从下往上是资产的一生，最上面是下一步</small></div>${own}</aside>
     <div class="cases">${cases}<section class="cs next" data-c="next"><header><span class="n">→</span><h4>下一步：手机 App + Agent</h4><em class="plan">规划中</em></header><div class="nxs">${nx}</div></section></div></div>`;
   const rows = [...body.querySelectorAll('.ow')], cards = [...body.querySelectorAll('.cs')], sc = body.querySelector('.cases');
   const hi = c => cards.forEach(el => el.classList.toggle('hot', c !== '-1' && el.dataset.c === c));
@@ -1911,34 +2050,32 @@ function buildToy(k){
 }
 
 /* 资管的摆件 = 一台小机柜：从下往上是资产的生命周期，最上面一层是还没做的下一步。
-   亮灯的抽屉是我主写的，半透明的是我接入 / 集成的，虚线的是规划中。点抽屉 → 展开到「我做了什么」那一段 */
+   亮灯的是主要做的，半透明的是协作的，虚线的是规划中（只用样子区分，文字不逐层强调归属）。点抽屉 → 展开到「我做了什么」那一段 */
 const ASSET_RACK = [   // [类型, 名字, 这一层说明, 对应「我做了什么」里的第几个案例（'next' = 下一步）]
   ['plan', '手机 App · Agent', '规划中：手机扫码验收、移动审批、Agent 发起审批单', 'next'],
-  ['co', '合并与发布收口', '多人并行开发，我负责并分支、解迁移撞号、修主干的测试和构建', 2],
-  ['co', '自研 / 自用看板接入', '这个域由另一位开发负责，我把它接进看板和使用安排', -1],
+  ['co', '合并与发布收口', '多人并行开发时并分支、解迁移撞号、修主干的测试和构建', 2],
+  ['co', '自研 · 自用接入', '把内部自研 / 自用接进看板和使用安排', -1],
   ['mine', '项目台账 · 开票', '台账表、合同金额与月租金落库、开票模块、对账', -1],
-  ['mine', '审批流程图 · 消息中心', '每一单卡在哪一环、每环等了多久；待办集中到一处', 1],
+  ['mine', '流程图 · 消息中心', '每一单卡在哪一环、每环等了多久；待办集中到一处', 1],
   ['mine', '资产域 11 个审批点', '采购、调拨、改 SN、换机柜、退役、报修……都只能走审批生效', 1],
   ['mine', '到货逐件验收', '按采购申报逐件核对 SN，验收留版本链，生效时冻结快照', 0],
 ];
 const RACK_C = ['', '', '', '#8fdcae', '#8cd7ea', '#b79ae3', '#f49ac8'];
-const RACK_BADGE = { mine:'我主写', co:'接入 · 集成', plan:'规划中' };
-const RACK_LEGEND = `<span><i class="lg mine"></i>我主写</span><span><i class="lg co"></i>接入 · 集成</span><span><i class="lg plan"></i>规划中</span>`;
+const RACK_BADGE = { mine:'', co:'协作', plan:'规划中' };
+const RACK_LEGEND = `<span><b>资产域 · 小机柜</b>从下往上是资产的一生 · 点抽屉看详情</span>`;
 function cabinetHTML(){
-  const dws = ASSET_RACK.map(([kind, n], i) => `<button class="dw ${kind}" data-i="${i}" style="top:${24 + i*45}px;--c:${RACK_C[i] || '#fff'};--d:${(i*0.37).toFixed(2)}s" aria-label="${n}（${RACK_BADGE[kind]}）">
-      <span class="dw-in"><span class="dw-t"></span><span class="dw-s"></span><span class="dw-f"><i class="led"></i><b>${n}</b><em>${RACK_BADGE[kind]}</em></span></span></button>`).join('');
-  return `<div class="cab" role="group" aria-label="我的机柜：每个抽屉是一块工作，点开看详情">
-      <div class="cab-sh"></div>
-      <div class="cab-sc"><div class="cab-back"></div><div class="cab-side"></div><div class="cab-top"></div><div class="cab-bot"></div>
-        <div class="cab-post l"></div><div class="cab-post r"></div>${dws}<i class="cab-foot a"></i><i class="cab-foot b"></i></div>
-      <div class="cab-sign"><small>MY RACK</small>资产域 · 我的机柜</div>
+  const dws = ASSET_RACK.map(([kind, n], i) => `<button class="dw ${kind}" data-i="${i}" style="top:${6 + i*51}px;--c:${RACK_C[i] || '#fff'};--d:${(i*0.37).toFixed(2)}s" aria-label="${n}${RACK_BADGE[kind] ? `（${RACK_BADGE[kind]}）` : ''}">
+      <span class="dw-in"><span class="dw-t"></span><span class="dw-f"><i class="led"></i><b>${n}</b>${RACK_BADGE[kind] ? `<em>${RACK_BADGE[kind]}</em>` : ''}<i class="hdl"></i></span></span></button>`).join('');
+  return `<div class="cab" role="group" aria-label="资产域机柜：每个抽屉是一块工作，点开看详情">
+      <div class="cab-sh"></div><img class="cab-img" src="assets/toy/cabinet_body.webp" alt="" draggable="false">
+      <div class="cab-sc">${dws}</div>
       <div class="cab-cap"><div class="cc-lg">${RACK_LEGEND}</div><div class="cc-d"></div></div>
     </div>`;
 }
 function bindCabinet(cab){
   const cap = cab.querySelector('.cab-cap'), d = cap.querySelector('.cc-d'), dws = [...cab.querySelectorAll('.dw')];
   const show = i => { dws.forEach(el => el.classList.toggle('hot', +el.dataset.i === i)); cap.classList.toggle('on', i >= 0);
-    if (i >= 0){ const [kind, n, t] = ASSET_RACK[i]; d.innerHTML = `<b>${n}<em class="${kind}">${RACK_BADGE[kind]}</em></b>${t}`; } };
+    if (i >= 0){ const [kind, n, t] = ASSET_RACK[i]; d.innerHTML = `<b>${n}${RACK_BADGE[kind] ? `<em class="${kind}">${RACK_BADGE[kind]}</em>` : ''}</b>${t}`; } };
   dws.forEach(el => {
     const i = +el.dataset.i;
     el.onmouseenter = () => { if (!TOUCH) { show(i); SFX.play('crank_click', { gain:0.18, rate:1.5 + i*0.06 }); } };
@@ -2382,13 +2519,15 @@ if (TOUCH){
 
 
 /* ================================================================== 深度取样（景深对焦用，CPU 读一份小图） */
-function imgData(url){
+function imgData(url, late){
   const o = { ready:false }; const im = new Image();
-  im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently:true });
+  const proc = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently:true });
     g.drawImage(im, 0, 0); o.w = im.width; o.h = im.height; o.d = g.getImageData(0, 0, im.width, im.height).data; o.ready = true; };
-  im.src = url; return o;
+  im.onload = () => late ? WARM.q.push(proc) : proc();
+  if (late) LATE.q.push(() => { im.src = url; }); else im.src = url;
+  return o;
 }
-const DEPTH = { ov:imgData(OVERVIEW.src.depth), cl:imgData(CLOSE.src.masks) };
+const DEPTH = { ov:imgData(OVERVIEW.src.depth), cl:imgData(CLOSE.src.masks, true) };
 function depthAt(o, x, y, size){
   if (!o.ready) return null;
   const X = clamp(Math.round(x/size[0]*o.w), 0, o.w - 1), Y = clamp(Math.round(y/size[1]*o.h), 0, o.h - 1);
@@ -2622,7 +2761,7 @@ function setPush(e){
 const LAYER = { close:false, ov:true };
 function enterMachine(){
   if (OV.mode !== 'overview' || !OV.ready) return;
-  if (!CL.ready){ toast('近景还在加载，稍等一下…'); CL.pendingEnter = true; return; }
+  if (!CL.ready){ toast('近景还在加载，稍等一下…'); CL.pendingEnter = true; startLate(); return; }
   OV.ox += OV.dx; OV.oy += OV.dy; OV.dx = OV.dy = 0;   // 把跟随偏移并进位置，推镜头从眼前这一帧开始
   OV.mode = 'pushing'; OV.home = { s:OV.s, ox:OV.ox, oy:OV.oy };
   gsap.killTweensOf(clU.uMatchK); if (MATCH.done) clU.uMatchK.value = 1;
@@ -2688,12 +2827,23 @@ function updateAmbient(dt){
 /* ================================================================== ⑨ 主循环 */
 const clock = new THREE.Clock();
 if (DEBUG || Q.has('fps')){ QUAL.fpsEl = document.createElement('div'); QUAL.fpsEl.id = 'fps'; document.body.appendChild(QUAL.fpsEl); }
+// ?perf / ?debug：记下超过 50ms 的长帧（Chrome 的 long-animation-frame），控制台里 __dbg.perf() 看是谁卡的
+const PERF = [];
+if (DEBUG || Q.has('perf')) try { new PerformanceObserver(l => l.getEntries().forEach(e => PERF.push({ t:Math.round(e.startTime), ms:Math.round(e.duration), mode:OV.mode, build:BUILD.on ? (BUILD.go ? '上色中' : '等点击') : '-',
+  who:(e.scripts || []).filter(x => x.duration > 8).map(x => `${x.invoker}·${x.sourceFunctionName || ''}·${Math.round(x.duration)}ms`).join(' | ') }))).observe({ type:'long-animation-frame', buffered:true }); } catch (e) {}
 function setPR(pr){ QUAL.pr = pr; R.setPixelRatio(pr); R.setSize(innerWidth, innerHeight, false); ovU.uDpr.value = pr; }
 // 自动降画质：每 40 帧看一次平均帧率，低于 ~40fps 就降一档；推镜头时只在明显卡（<24fps）时才降
 // 只降渲染分辨率（像素比），所有特效都保留：2 → 1.5 → 1.25 → 1 → 0.85 → 0.75
 // （?lite 是手动的省电模式：会关景深/云影/毛玻璃，默认不用）
 const PR_STEPS = [1.5, 1.25, 1, 0.85, 0.75];
-function degrade(){ const nx = PR_STEPS.find(v => v < QUAL.pr - 0.01); if (nx == null) return false; setPR(nx); return true; }
+function degrade(){ const nx = PR_STEPS.find(v => v < QUAL.pr - 0.01); if (nx == null) return false;
+  QUAL.fail[QUAL.pr] = (QUAL.fail[QUAL.pr] || 0) + 1; QUAL.good = 0; setPR(nx); QUAL.hold = performance.now() + 600; return true; }
+// v13：降下去以后，稳定流畅一阵子再升回一档。同一档如果已经卡过两次，就不再升回去（免得来回跳）
+function upgrade(){
+  const up = [QUAL.max, ...PR_STEPS].filter(v => v <= QUAL.max + 0.001 && v > QUAL.pr + 0.01).pop();
+  if (up == null || (QUAL.fail[up] || 0) >= 2) return false;
+  setPR(up); QUAL.good = 0; QUAL.hold = performance.now() + 600; return true;
+}
 function liteMode(){ QUAL.level = 3; clU.uCloud.value = 0; CL.dofBase = 0; QUAL.noDof = true; FX.cap = 450; document.body.classList.add('lite'); }
 function perfTick(raw){
   if (raw > 0.25 || document.hidden) return;
@@ -2701,10 +2851,12 @@ function perfTick(raw){
   if (QUAL.fpsEl && QUAL.fN >= 30){ QUAL.fpsEl.textContent = `${Math.round(QUAL.fN/QUAL.fAcc)} fps · ${OV.mode} · 像素比 ${QUAL.pr} · 档位 ${QUAL.level}${QUAL.soft ? ' · 软件渲染' : ''}`; QUAL.fAcc = QUAL.fN = 0; }
   if (Q.has('hq')) return;
   if (QUAL.warm < 20){ QUAL.warm++; return; }   // 刚开页的前几帧在解码贴图，不算
+  if (performance.now() < QUAL.hold){ QUAL.acc = QUAL.n = 0; return; }   // 刚做完加载 / 传显卡 / 切分辨率的那一小段，不算
   QUAL.acc += raw; QUAL.n++;
   if (QUAL.n >= 40){
     const avg = QUAL.acc/QUAL.n, moving = OV.mode === 'pushing' || OV.mode === 'pulling';
     if (avg > (moving ? 1/24 : 1/40)) degrade();
+    else if (avg < 1/52 && !moving && QUAL.pr < QUAL.max - 0.01 && ++QUAL.good >= 4) upgrade();   // 连续约 160 帧都稳在 52fps 以上
     QUAL.acc = QUAL.n = 0;
   }
 }
@@ -2715,6 +2867,7 @@ function perfTick(raw){
   QUAL.soft = /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i.test(name);
   if (QUAL.soft && !Q.has('hq')) setPR(Math.min(QUAL.pr, 0.85));   // 软件渲染：先从低一点的分辨率开始，特效照旧
   if (Q.has('lite')){ liteMode(); setPR(0.75); }
+  QUAL.max = QUAL.pr;   // 自动升回时不超过起始分辨率
 })();
 CL.dofBase = REDUCED ? 0 : 0.7;
 // 光标停住 2.5 秒（或手机没有陀螺仪）时，画面自己慢慢左右轻晃
@@ -2798,6 +2951,7 @@ function frame(dt, t){
 function loop(){
   const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
   perfTick(raw);
+  warmTick();
   frame(dt, clock.elapsedTime);
   requestAnimationFrame(loop);
 }
@@ -2833,9 +2987,35 @@ function computeMatch(){
     clU.uMatchK.value = OV.mode === 'closeup' ? MATCH.rest : 1;
   } catch (err){ console.warn('color match skipped', err); }
 }
-mgrOV.onLoad = () => { OV.ready = true; canvas.classList.add('ready'); maybeBuild(); computeMatch(); };
-mgrOVLater.onLoad = () => { OV.nightReady = true; ovU.uNightT.value = S.night; };
-mgrCL.onLoad = () => { CL.ready = true; computeMatch(); if (CL.pendingEnter){ CL.pendingEnter = false; enterMachine(); } };
+// 总览图到齐：显示之前先把总览用到的贴图传进显卡、着色器编译好（画布这时还是透明的，看不到这一下）
+mgrOV.onLoad = () => {
+  [ovU.uDay, ovU.uDepth, ovU.uBlurT, ovU.uLine].forEach(u => R.initTexture(u.value));
+  try { R.compile(ovScene, cam); R.compile(fxScene, cam); } catch (e) {}
+  QUAL.hold = performance.now() + 1200;
+  OV.ready = true; canvas.classList.add('ready'); maybeBuild(); computeMatch();
+  startLate();
+};
+// 晚到的贴图：下载好以后排进 WARM 队列，一张一张传显卡
+const pendTex = mgr => lateTex.get(mgr).filter(t => t && t.userData.pend).map(t => () => { t.userData.pend = false; t.needsUpdate = true; R.initTexture(t); });
+mgrOVLater.onLoad = () => {
+  WARM.q.push(...pendTex(mgrOVLater), () => { OV.nightReady = true; ovU.uNightT.value = S.night; });
+};
+mgrCL.onLoad = () => {
+  WARM.q.push(...pendTex(mgrCL),
+    () => { try { R.compile(clScene, cam); } catch (e) {} },
+    () => { CL.ready = true; computeMatch(); if (CL.pendingEnter){ CL.pendingEnter = false; enterMachine(); } });
+};
+function startLate(){ if (LATE.started) return; LATE.started = true; LATE.q.splice(0).forEach(f => f()); }
+setTimeout(startLate, 8000);   // 总览图万一一直没到齐，也不要让近景永远不下载
+// 安静的时候才做：线稿停着等点击、开场上色结束后的总览；用户急着进扭蛋机时一次做完
+function warmOK(){ return CL.pendingEnter || (OV.mode === 'overview' && (!BUILD.on || !BUILD.go)); }
+function warmTick(){
+  if (!WARM.q.length || !warmOK()) return;
+  if (WARM.skip > 0){ WARM.skip--; return; }
+  const n = CL.pendingEnter ? WARM.q.length : 1;
+  for (let i = 0; i < n && WARM.q.length; i++){ try { WARM.q.shift()(); } catch (e){ console.warn('warm step failed', e); } }
+  WARM.skip = 3; QUAL.hold = performance.now() + 400;   // 这几帧是我们故意做重活，不算进自动降画质
+}
 RM.addEventListener?.('change', e => { REDUCED = e.matches; ovU.uMotion.value = REDUCED ? 0.3 : 1; clU.uSway.value = REDUCED ? 0 : 1.3; clU.uCloud.value = REDUCED ? 0 : 0.16; CL.dofBase = REDUCED ? 0 : 0.7; });
 
 $('#btnGate').onclick = () => buildGo(true);
@@ -2870,7 +3050,7 @@ addEventListener('keydown', e => {
 ovLayout(true); clLayout(); layoutFore(); resize(); applyNight(0);
 loop();
 // 调试：?debug 时 window.__dbg；预览窗口隐藏时 rAF 会停，用 __dbg.tick(n) 手动推进
-window.__dbg = { BUILD, startBuild, fireworkBurst, nightTransition, toggleNight,
+window.__dbg = { PERF, perf(){ console.table(PERF); return PERF; }, WARM, LATE, QUAL, warmTick, lateTex, BUILD, startBuild, fireworkBurst, nightTransition, toggleNight,
   replayBuild(){ BUILD.started = false; BUILD.on = false; BUILD.go = false; revealG.fillStyle = '#000'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true; startBuild(); }, segAt, OV, CL, S, ovU, clU, R, setPush, pushPlan, LAYER, enterMachine, backToPark, openCard, expandCard, collapseCard, stashCard, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
   tick(n = 1, dt = 1/60){ gsap.ticker.lagSmoothing(0); for (let i = 0; i < n; i++){ gsap.ticker.tick(); clock.elapsedTime += dt; frame(dt, clock.elapsedTime); } },
   snap(){ frame(0, clock.elapsedTime); const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height; c.getContext('2d').drawImage(canvas, 0, 0); return c.toDataURL('image/jpeg', 0.85); } };
