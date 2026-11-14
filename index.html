@@ -398,6 +398,10 @@
   .sl-act .btn{padding:9px 18px;font-size:13.5px}
   .sl-act .btn.ghost{color:#5b3b62}
   @media (prefers-reduced-motion:reduce){ .rk-tip{display:none} }
+  /* 流畅模式（显卡弱 / Linux 软件渲染）：毛玻璃换成实色，省掉每帧的背景模糊 */
+  body.lite *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  body.lite{--glass:rgba(255,246,252,.94)} body.lite.night{--glass:rgba(48,40,104,.95)}
+  body.lite .sc-sheen::before{animation:none;display:none}
 </style>
 <script>
 // 直接双击 / 在文件预览里打开时（file:// 或 data:），浏览器不允许 WebGL 读本地图片，画面会只剩代码画的玻璃砖。
@@ -2567,22 +2571,37 @@ function updateAmbient(dt){
 const clock = new THREE.Clock();
 if (DEBUG || Q.has('fps')){ QUAL.fpsEl = document.createElement('div'); QUAL.fpsEl.id = 'fps'; document.body.appendChild(QUAL.fpsEl); }
 function setPR(pr){ QUAL.pr = pr; R.setPixelRatio(pr); R.setSize(innerWidth, innerHeight, false); ovU.uDpr.value = pr; }
+// 自动降画质：每 40 帧看一次平均帧率，低于 ~40fps 就降一档；推镜头时只在明显卡（<24fps）时才降
+// 档位：像素比降到 1 → 关景深/云影 → 粒子减半 → 像素比 0.8 → 流畅模式（关毛玻璃）→ 像素比 0.6
+const QSTEPS = [
+  () => QUAL.pr > 1 && (setPR(Math.max(1, +(QUAL.pr - 0.5).toFixed(2))), true),
+  () => QUAL.level < 1 && (QUAL.level = 1, clU.uCloud.value = 0, CL.dofBase = 0, QUAL.noDof = true, true),
+  () => QUAL.level < 2 && (QUAL.level = 2, FX.cap = 450, true),
+  () => QUAL.pr > 0.8 && (setPR(0.8), true),
+  () => QUAL.level < 3 && (QUAL.level = 3, document.body.classList.add('lite'), FX.cap = 260, true),
+  () => QUAL.pr > 0.6 && (setPR(0.6), true),
+];
+function degrade(){ for (const f of QSTEPS) if (f()) return true; return false; }
 function perfTick(raw){
-  if (raw > 0.1 || document.hidden) return;
+  if (raw > 0.25 || document.hidden) return;
   QUAL.fAcc += raw; QUAL.fN++;
-  if (QUAL.fpsEl && QUAL.fN >= 30){ QUAL.fpsEl.textContent = `${Math.round(QUAL.fN/QUAL.fAcc)} fps · ${OV.mode} · 像素比 ${QUAL.pr} · 档位 ${QUAL.level}`; QUAL.fAcc = QUAL.fN = 0; }
-  if (OV.mode === 'pushing' || OV.mode === 'pulling'){ QUAL.acc = QUAL.n = 0; return; }
+  if (QUAL.fpsEl && QUAL.fN >= 30){ QUAL.fpsEl.textContent = `${Math.round(QUAL.fN/QUAL.fAcc)} fps · ${OV.mode} · 像素比 ${QUAL.pr} · 档位 ${QUAL.level}${QUAL.soft ? ' · 软件渲染' : ''}`; QUAL.fAcc = QUAL.fN = 0; }
+  if (Q.has('hq')) return;
+  if (QUAL.warm < 20){ QUAL.warm++; return; }   // 刚开页的前几帧在解码贴图，不算
   QUAL.acc += raw; QUAL.n++;
-  if (QUAL.n >= 90){
-    if (QUAL.acc/QUAL.n > 1/48){
-      // 降档：像素比 → 关景深 / 云影 → 粒子减半
-      if (QUAL.pr > 1.25) setPR(Math.max(1.25, +(QUAL.pr - 0.25).toFixed(2)));
-      else if (QUAL.level === 0){ QUAL.level = 1; clU.uCloud.value = 0; CL.dofBase = 0; }
-      else if (QUAL.level === 1){ QUAL.level = 2; FX.cap = 450; }
-    }
+  if (QUAL.n >= 40){
+    const avg = QUAL.acc/QUAL.n, moving = OV.mode === 'pushing' || OV.mode === 'pulling';
+    if (avg > (moving ? 1/24 : 1/40) && degrade() && QUAL.level >= 3 && !QUAL.told){ QUAL.told = true; toast('已切到流畅模式'); }
     QUAL.acc = QUAL.n = 0;
   }
 }
+// Linux 上 Chrome/Firefox 经常没开显卡加速（SwiftShader / llvmpipe 软件渲染），一开始就用流畅模式
+(() => {
+  let name = '';
+  try { const gl = R.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); name = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER)); } catch (e) {}
+  QUAL.soft = /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i.test(name);
+  if (Q.has('lite') || (QUAL.soft && !Q.has('hq'))){ while (QUAL.level < 3 && degrade()); setPR(0.6); }
+})();
 CL.dofBase = REDUCED ? 0 : 0.7;
 // 光标停住 2.5 秒（或手机没有陀螺仪）时，画面自己慢慢左右轻晃
 const SWAY = new THREE.Vector2();
@@ -2602,7 +2621,7 @@ function frame(dt, t){
     const ovTgt = ovIdle ? 0.78 : (depthAt(DEPTH.ov, ...ovToImg(...P.pos), OVERVIEW.size) ?? 0.78);
     OV.dofD = lerp(OV.dofD ?? 0.78, ovTgt, 1 - Math.exp(-dt*(ovIdle ? 1.2 : 4)));
     ovU.uDofD.value = OV.dofD;
-    ovU.uDof.value = OV.mode === 'overview' && !REDUCED ? OVERVIEW.dof*ovU.uBuild.value : 0;
+    ovU.uDof.value = OV.mode === 'overview' && !REDUCED && !QUAL.noDof ? OVERVIEW.dof*ovU.uBuild.value : 0;
     updateBuild(); updateNightFX(dt);
     ovU.uView.value.set(OV.s, OV.ox + OV.dx, OV.oy + OV.dy); ovU.uHover.value = OV.hover;
     ovBub.u.uPar.value.set(-OV.par.x*amp*2, -OV.par.y*amp*2);
