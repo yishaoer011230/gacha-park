@@ -458,6 +458,361 @@
   .sl-tags.plan span{background:rgba(255,255,255,.4);box-shadow:none;outline:1.5px dashed rgba(194,84,157,.6);outline-offset:-1.5px;color:#b0478d}
   @media (max-aspect-ratio:1/1){ .cab{margin:10px 24px 64px} }
 
+  /* v18：扫码贴纸 + 扫描光 + 设备档案卡（演示数据） */
+  .cab-qr{position:absolute;left:262px;top:318px;z-index:3;width:46px;padding:4px 4px 3px;border:0;border-radius:6px;background:#fff;cursor:pointer;transform:rotate(7deg);
+    box-shadow:0 0 0 1px rgba(217,174,98,.7),0 6px 12px -4px rgba(150,80,140,.4);transition:transform .25s}
+  .cab-qr:hover{transform:rotate(0deg) scale(1.12)}
+  .cab-qr .qr{display:grid;grid-template:repeat(9,1fr)/repeat(9,1fr);width:38px;height:38px}
+  .cab-qr .qr b{background:#5b3b62;border-radius:1px}
+  .cab-qr span{display:block;font-size:8.5px;font-weight:700;color:#c2549d;letter-spacing:.08em;margin-top:2px}
+  .cab-qr::after{content:"";position:absolute;inset:-5px;border-radius:9px;border:1.5px solid rgba(236,133,195,.6);animation:qrPing 2.4s ease-out infinite}
+  @keyframes qrPing{0%{opacity:.9;transform:scale(.92)}70%,100%{opacity:0;transform:scale(1.25)}}
+  .cab-beam{position:absolute;left:30px;width:240px;top:95px;height:4px;z-index:4;border-radius:4px;opacity:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent,#8cf0ff,#fff,#8cf0ff,transparent);box-shadow:0 0 18px 6px rgba(140,240,255,.55)}
+  .cab.scan .cab-beam{animation:qrBeam 1.05s ease-in-out}
+  @keyframes qrBeam{0%{opacity:0;top:95px}12%{opacity:1}88%{opacity:1}100%{opacity:0;top:455px}}
+  .cab-card{position:absolute;left:30px;top:150px;width:240px;z-index:5;padding:14px 16px 12px;box-sizing:border-box;border-radius:14px;cursor:pointer;
+    background:rgba(255,252,255,.94);box-shadow:0 0 0 1px rgba(217,174,98,.55),0 18px 40px -12px rgba(120,60,140,.45);color:#5b3b62;
+    opacity:0;transform:translateY(14px) scale(.92);pointer-events:none;transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.4,1)}
+  .cab.scanned .cab-card{opacity:1;transform:none;pointer-events:auto}
+  .cab-card small{display:block;font-size:10px;letter-spacing:.12em;color:#3aa9c4;margin-bottom:4px}
+  .cab-card small::before{content:"✓ 已识别 · "}
+  .cab-card > b{display:block;font-size:15px;margin-bottom:8px}
+  .cab-card dl{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;margin:0;font-size:12px}
+  .cab-card dt{color:#a07898} .cab-card dd{margin:0;font-weight:600}
+  .cc-x{display:block;margin-top:9px;font-size:10.5px;color:#b08aa8;text-align:right}
+  .dw-f em{max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* 「做了什么」左栏：团队分工 */
+  .tm{padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.55);font-size:12px}
+  .tm b{display:flex;align-items:center;gap:6px;font-size:12.5px} .tm span{display:block;color:var(--ink-soft);font-size:11px;line-height:1.45;margin-top:2px}
+  .tm.me{background:rgba(255,255,255,.7);border-color:rgba(236,133,195,.5)}
+  body.night .tm{background:rgba(255,255,255,.06);border-color:rgba(190,170,255,.2)} body.night .tm.me{background:rgba(255,255,255,.14);border-color:#ff9ddf}
+  .oh2{margin-top:8px}
+  .ow .lg{margin-top:3px}
+  /* Agent 问答演示 */
+  .ag{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;padding:16px 22px 20px}
+  .ag-chat{align-self:start;max-height:100%;display:flex;flex-direction:column;gap:14px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.9);overflow:auto;
+    box-shadow:0 14px 30px -18px rgba(120,60,140,.4)}
+  body.night .ag-chat{background:rgba(255,255,255,.08);border-color:rgba(190,170,255,.25)}
+  .ag-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-soft)} .ag-bar b{font-size:14px;color:var(--ink)} .ag-bar span{flex:1}
+  .ag-re{border:1px solid rgba(200,150,210,.5);background:transparent;color:var(--ink);border-radius:999px;padding:4px 12px;font-size:12px}
+  .ag-q{align-self:flex-end;max-width:80%;padding:10px 14px;border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,#f39bd0,#b79ae3);color:#fff;font-size:14px;line-height:1.6}
+  .ag-steps{display:flex;gap:8px;flex-wrap:wrap}
+  .ag-steps span{font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.5);color:var(--ink-soft);opacity:.45;transition:opacity .3s,background .3s}
+  .ag-steps span.on{opacity:1;background:#e9fbf2;color:#2f8a5c} .ag-steps span.on::before{content:"✓ "}
+  body.night .ag-steps span.on{background:rgba(111,224,161,.18);color:#9ef0c4}
+  .ag-a{max-width:90%;padding:12px 16px;border-radius:16px 16px 16px 4px;background:#fff;font-size:14.5px;line-height:1.8;min-height:52px;box-shadow:0 0 0 1px rgba(236,170,205,.4)}
+  body.night .ag-a{background:rgba(255,255,255,.12)}
+  .ag-caret{display:inline-block;width:2px;height:1em;margin-left:2px;vertical-align:-2px;background:#c2549d;animation:blinkC .9s steps(1) infinite}
+  @keyframes blinkC{50%{opacity:0}}
+  .ag-src{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft)}
+  .ag-src i{font-style:normal;padding:3px 10px;border-radius:8px;background:rgba(255,255,255,.4);opacity:.45;transition:opacity .3s}
+  .ag-src i.on{opacity:1;background:#fff;color:#c2549d;box-shadow:0 0 0 1px rgba(236,133,195,.5)} body.night .ag-src i.on{background:rgba(255,255,255,.16);color:#ffc2ea}
+  .ag-src i.flash{animation:eviFlash .9s ease-out}
+  @keyframes eviFlash{0%{box-shadow:0 0 0 0 rgba(243,155,208,.8)}100%{box-shadow:0 0 0 12px rgba(243,155,208,0)}}
+  .ag-side{overflow:auto;font-size:12px;color:var(--ink-soft)}
+  .ag-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px} .ag-chips i{font-style:normal;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.55);color:var(--ink)}
+  body.night .ag-chips i{background:rgba(255,255,255,.1)}
+  .ag-side ol{margin:0 0 10px;padding-left:18px;line-height:1.55} .ag-side li{margin-bottom:6px} .ag-side li b{display:block;color:var(--ink);font-size:12.5px}
+  .ag-note{font-size:11px;margin:0;opacity:.8}
+  @media (max-width:820px){ .ag{grid-template-columns:1fr;grid-template-rows:auto auto;align-content:start;overflow:auto;padding:12px} .ag-chat{max-height:none;overflow:visible;padding:14px} .ag-side{overflow:visible} .ag-q,.ag-a{max-width:100%}
+    .tm{flex:none;width:220px} }
+  /* v19 平台入口：真实登录页实时嵌入 */
+  .ef{position:absolute;inset:14px 22px 20px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px}
+  .ef-head{display:flex;align-items:center;gap:12px}
+  .ef-head img{width:38px;height:38px;border-radius:10px;box-shadow:0 6px 16px -6px rgba(80,90,200,.5)}
+  .ef-head div{flex:1;min-width:0} .ef-head h4{margin:0;font-size:16px} .ef-head p{margin:2px 0 0;font-size:12px;color:var(--ink-soft)}
+  .ef-frame{position:relative;min-height:0;border-radius:16px;overflow:hidden;background:#f5f7fb;box-shadow:0 24px 50px -18px rgba(90,80,170,.5),0 0 0 1px rgba(255,255,255,.95),0 0 0 6px rgba(255,255,255,.3)}
+  .ef-frame iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;opacity:0;transition:opacity .6s;background:#f5f7fb}
+  .ef-frame.ok iframe{opacity:1}
+  .ef-fb{position:absolute;inset:0;display:flex;gap:10px;padding:16% 4% 10%;align-items:stretch;transition:opacity .6s}
+  .ef-fb img{flex:1;min-width:0;object-fit:cover;border-radius:12px;filter:saturate(.7)}
+  .ef-fb span{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.9);font-size:12px;color:#55607a}
+  .ef-frame.ok .ef-fb{opacity:0} .ef-frame.slow .ef-fb span::after{content:"（网络较慢，可点右上角直接打开）"}
+  .ef-shield{position:absolute;inset:0;cursor:default}
+  .ef-live{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(20,30,60,.62);color:#fff;font-size:11px;letter-spacing:.06em;backdrop-filter:blur(6px)}
+  .ef-live i{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;animation:ledBlink 1.6s infinite steps(1)}
+  .ef-frame:not(.ok) .ef-live{display:none}
+  /* v19 产品结构：架构图 */
+  .arch{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:18px;padding:14px 22px 18px}
+  .ar-main{min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:stretch;padding:2px 4px 2px 2px;scrollbar-width:thin;scrollbar-color:#f1b9d6 transparent}
+  .abk{position:relative;border-radius:16px;padding:10px 12px 12px 74px;background:rgba(255,255,255,.42);border:1px solid rgba(255,255,255,.75)}
+  body.night .abk{background:rgba(255,255,255,.06);border-color:rgba(190,170,255,.22)}
+  .ab-t{position:absolute;left:12px;top:12px;width:50px;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-soft)}
+  .ab-row{display:flex;gap:8px;flex-wrap:wrap}
+  .an{flex:1;min-width:92px;padding:7px 10px;border-radius:11px;background:#fff;box-shadow:0 0 0 1px rgba(220,190,230,.7),0 4px 10px -6px rgba(140,80,160,.35);cursor:default;transition:transform .2s,box-shadow .2s;color:#5b3b62}
+  .an b{display:block;font-size:12.5px} .an small{display:block;font-size:10.5px;color:#9a7aa0;margin-top:1px;line-height:1.35}
+  .an.hot{transform:translateY(-2px);box-shadow:0 0 0 2px #f39bd0,0 10px 18px -8px rgba(200,90,170,.5)}
+  .an.plan{background:rgba(255,255,255,.5);box-shadow:none;outline:1.5px dashed rgba(194,84,157,.55);outline-offset:-1.5px}
+  .an.part{box-shadow:0 0 0 1px rgba(255,201,107,.9),0 4px 10px -6px rgba(200,150,40,.35)}
+  .an.ok b::after{content:"";display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:#4ade80;vertical-align:2px}
+  .ac{display:block;align-self:center;width:2px;height:16px;margin:2px 0;background:repeating-linear-gradient(180deg,#e7a6cf 0 4px,transparent 4px 8px);background-size:2px 8px;animation:acFlow .6s linear infinite}
+  @keyframes acFlow{to{background-position:0 8px}}
+  .ab-gov{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 8px;border-radius:12px;background:linear-gradient(90deg,rgba(183,154,227,.18),rgba(244,154,200,.18));border:1px dashed rgba(183,154,227,.6)}
+  .ab-gov em{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#8b5fbf;white-space:nowrap}
+  .an.gov{min-width:0;padding:5px 9px;background:rgba(255,255,255,.85)} .an.gov small{display:none}
+  .al{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;align-items:center;margin-top:6px}
+  .al-h b{display:block;font-size:12px;color:var(--ink)} .al-h small{font-size:10px;color:var(--ink-soft)}
+  .al-row{position:relative;display:flex;align-items:stretch;gap:2px;padding:4px 0}
+  .al-row .an{min-width:0;padding:6px 7px} .al-row .an small{font-size:10px}
+  .al-row .an{border-top:3px solid var(--lc)}
+  .ar{align-self:center;font-style:normal;color:#c79bd0;font-size:13px;flex:none}
+  .al-flow{position:absolute;left:0;right:0;bottom:-2px;height:2px;background:linear-gradient(90deg,transparent,var(--lc),transparent);background-size:30% 100%;background-repeat:no-repeat;animation:alFlow 2.6s linear infinite;opacity:.9}
+  @keyframes alFlow{from{background-position:-30% 0}to{background-position:130% 0}}
+  .ab-link{margin-top:8px;font-size:10.5px;color:var(--ink-soft);text-align:center}
+  .ab-id{padding:10px 12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .an.core{width:100%;max-width:560px;text-align:center;padding:10px 14px;background:linear-gradient(135deg,#fff,#fdf3fb);box-shadow:0 0 0 1.5px #e3c07e,0 10px 24px -12px rgba(180,120,60,.45)}
+  .an.core b{font-size:14px;letter-spacing:.06em} .an.core b::after{display:none}
+  .an.core.lit{animation:coreLit 1.2s ease-out infinite}
+  @keyframes coreLit{0%{box-shadow:0 0 0 1.5px #e3c07e,0 0 0 0 rgba(227,192,126,.6)}100%{box-shadow:0 0 0 1.5px #e3c07e,0 0 0 12px rgba(227,192,126,0)}}
+  .id-note{font-size:10.5px;color:var(--ink-soft)}
+  .sg{display:inline-block;margin-left:6px;font-style:normal;font-size:9.5px;padding:0 6px;border-radius:999px;vertical-align:1px}
+  .sg.ok{background:#e9fbf2;color:#2f8a5c} .sg.part{background:#fff3d6;color:#a86d00} .sg.plan{border:1px dashed #c2549d;color:#c2549d}
+  .ar-side{padding:6px 2px;overflow:auto}
+  .as-k{font-size:11px;letter-spacing:.14em;color:var(--ink-soft)}
+  .ar-side h5{margin:6px 0 6px;font-size:18px}
+  .as-d{margin:0 0 14px;font-size:13px;line-height:1.75}
+  .as-lg{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft)} .as-lg span{display:inline-flex;align-items:center;gap:5px}
+  .as-lg i{width:10px;height:10px;border-radius:3px} .as-lg i.ok{background:#4ade80} .as-lg i.part{background:#ffc96b} .as-lg i.plan{border:1.5px dashed #c2549d}
+  .as-note{margin-top:14px;font-size:11px;color:var(--ink-soft);opacity:.85}
+  @media (max-width:820px){ .arch{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;padding:10px} .ar-side{max-height:120px}
+    .abk{padding-left:12px;padding-top:28px} .al{grid-template-columns:1fr} .al-row{overflow-x:auto} .al-row .an{flex:none;width:92px} .ab-gov{flex-wrap:wrap} }
+  /* v20 产品结构（按平台侧栏菜单） */
+  .ps .ar-main{gap:10px;padding-top:11px} .ps .ar-main > section{flex:none}
+  .pq{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 10px 12px;border-radius:14px;background:rgba(255,255,255,.42);border:1px solid rgba(255,255,255,.75)}
+  .pq div{padding:7px 10px;border-radius:10px;background:#fff;box-shadow:0 0 0 1px rgba(220,190,230,.6)} .pq b{display:block;font-size:12.5px;color:#5b3b62} .pq span{font-size:11px;color:#9a7aa0;line-height:1.45}
+  .pq-k{position:absolute;right:12px;top:-9px;font-style:normal;font-size:10.5px;padding:1px 9px;border-radius:999px;background:#5b3b62;color:#fff;letter-spacing:.06em}
+  .pmain{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;padding:10px 12px;border-radius:14px;background:linear-gradient(90deg,rgba(244,154,200,.16),rgba(255,201,107,.16));border:1px solid rgba(244,154,200,.45);overflow:hidden}
+  .pmain > span{font-size:11px;font-weight:700;letter-spacing:.1em;color:#c2549d;margin-right:4px}
+  .pmain b{font-size:13px;padding:4px 11px;border-radius:999px;background:#fff;color:#5b3b62;box-shadow:0 2px 6px -3px rgba(200,90,170,.4)} .pmain i{font-style:normal;color:#d58bbd}
+  .pmain small{flex-basis:100%;font-size:11px;color:var(--ink-soft)}
+  .pmain u{position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,#f39bd0,transparent);background-size:30% 100%;background-repeat:no-repeat;animation:alFlow 2.4s linear infinite}
+  .pdom{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .pd{padding:8px 8px 9px;border-radius:13px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.8);border-top:3px solid var(--dc)}
+  body.night .pd,body.night .pq,body.night .pbase{background:rgba(255,255,255,.07);border-color:rgba(190,170,255,.22)}
+  .pd h6{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:12.5px;color:var(--ink)}
+  .pd h6 em{font-style:normal;font-size:9.5px;font-weight:600;padding:0 6px;border-radius:999px;background:#fff3d6;color:#a86d00}
+  .pd.next{background:linear-gradient(180deg,rgba(255,240,205,.75),rgba(255,255,255,.55));box-shadow:0 0 0 1.5px rgba(255,201,107,.8),0 10px 22px -14px rgba(200,140,30,.6)}
+  .pm{display:flex;align-items:center;gap:6px;padding:4px 7px;margin-top:3px;border-radius:8px;font-size:11.5px;color:#5b3b62;background:rgba(255,255,255,.75);cursor:default;transition:background .2s,box-shadow .2s}
+  .pm i{flex:none;width:6px;height:6px;border-radius:50%;background:#4ade80} .pm span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pm em{flex:none;font-style:normal;font-size:9.5px;padding:0 5px;border-radius:999px}
+  .pm.part i{background:#f59e0b} .pm.part em{background:#fff3d6;color:#a86d00}
+  .pm.todo{background:rgba(255,255,255,.4);color:#8a7a92} .pm.todo i{background:#cbd3e1} .pm.todo em{background:#eef1f6;color:#6b7591}
+  .pm.plan{background:rgba(255,255,255,.35);outline:1px dashed rgba(194,84,157,.55);outline-offset:-1px;color:#8a4a7a} .pm.plan i{background:none;border:1px dashed #c2549d;width:5px;height:5px} .pm.plan em{border:1px dashed #c2549d;color:#c2549d}
+  .pm.hot{background:#fff;box-shadow:0 0 0 1.5px #f39bd0}
+  .pbase{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 10px;border-radius:14px;background:linear-gradient(135deg,#fff,#fdf3fb);box-shadow:0 0 0 1.5px #e3c07e,0 10px 22px -14px rgba(180,120,60,.45)}
+  .pbase > span{font-size:11px;font-weight:700;letter-spacing:.1em;color:#a07838;margin-right:4px}
+  .pbase .pm{margin:0;flex:1;min-width:110px}
+  .as-lg i.todo{background:#cbd3e1}
+  @media (max-width:820px){ .pq{grid-template-columns:1fr 1fr} .pdom{grid-template-columns:1fr 1fr} }
+  /* v21 产品结构：三级缩放地图 */
+  .zm{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 230px;grid-template-rows:auto minmax(0,1fr);gap:10px 18px;padding:12px 22px 18px}
+  .zm-bar{grid-column:1 / -1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:30px}
+  .zm-crumb{display:flex;align-items:center;gap:6px} .zm-crumb i{font-style:normal;color:#c79bd0}
+  .zm-crumb button{border:0;background:none;color:var(--ink-soft);font-size:13px;padding:3px 6px;border-radius:7px} .zm-crumb button.on{color:var(--ink);font-weight:700;background:rgba(255,255,255,.6)}
+  .zm-crumb button[data-l]:not(.on):hover{color:#c2549d;text-decoration:underline}
+  .zm-crumb .back{width:26px;height:26px;border-radius:50%;border:1px solid rgba(200,140,190,.45);font-size:15px;line-height:1;padding:0}
+  .zm-hint{font-size:11.5px;color:var(--ink-soft)}
+  .zm-roles{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+  .zm-roles button{border:1px solid rgba(200,150,210,.45);background:rgba(255,255,255,.35);color:var(--ink);border-radius:999px;padding:3px 10px;font-size:11.5px}
+  .zm-roles button.on{background:#fff;border-color:#c2549d;color:#c2549d;font-weight:600}
+  .zm-stage{position:relative;min-height:0;border-radius:18px;overflow:hidden;background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,.75),rgba(255,255,255,.25) 60%,rgba(255,255,255,.1));border:1px solid rgba(255,255,255,.7)}
+  body.night .zm-stage{background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,.14),rgba(255,255,255,.04) 60%);border-color:rgba(190,170,255,.22)}
+  .zl{position:absolute;inset:0;pointer-events:none;will-change:transform,opacity}
+  .zl.on{pointer-events:auto}
+  .zm-side{grid-column:2;grid-row:2;overflow:auto;padding:4px 2px}
+  .zm-side h5{margin:6px 0;font-size:18px} .as-x{font-size:11.5px;color:#c2549d;margin:-6px 0 12px}
+  /* 第一层 */
+  .zm-lines{position:absolute;inset:0;width:100%;height:100%}
+  .zm-lines line{stroke:#e7a6cf;stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-dasharray:5 6;animation:zmDash 1.2s linear infinite}
+  .zm-lines line.ext{stroke:#c7b6dc;stroke-dasharray:2 6;animation-duration:2.4s}
+  @keyframes zmDash{to{stroke-dashoffset:-22}}
+  .zr{position:absolute;transform:translate(-50%,-50%);width:min(24%,190px);padding:8px 11px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px rgba(220,190,230,.7),0 8px 18px -10px rgba(140,80,160,.5);cursor:pointer;transition:transform .25s,box-shadow .25s;color:#5b3b62}
+  .zr:hover{transform:translate(-50%,-50%) scale(1.05);box-shadow:0 0 0 2px #f39bd0,0 12px 22px -10px rgba(200,90,170,.5)}
+  .zr b{display:block;font-size:13px} .zr span{display:block;font-size:11px;color:#9a7aa0;line-height:1.45}
+  .zr.fin{box-shadow:0 0 0 1.5px #ffc96b,0 8px 18px -10px rgba(200,140,30,.5)} .zr.fin b::after{content:" · 下一步重点";font-size:10px;color:#a86d00;font-weight:600}
+  .zc{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(40%,48vh,300px);aspect-ratio:1;border:0;border-radius:50%;cursor:pointer;color:#fff;padding:0;background:none;transition:transform .3s}
+  .zc-cv{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;pointer-events:none}
+  .zc-t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none}
+  .zc-t img{width:14% !important;opacity:.9;box-shadow:0 0 14px rgba(79,243,255,.6) !important}
+  .zc-t b{text-shadow:0 0 8px #ff5ad9,0 0 18px rgba(255,90,217,.6),0 1px 2px rgba(20,0,40,.8) !important}
+  .zc-t small{text-shadow:0 0 6px rgba(79,243,255,.8)} .zc-t em{background:rgba(20,8,50,.45) !important;box-shadow:0 0 0 1px rgba(79,243,255,.6),0 0 10px rgba(79,243,255,.35)}
+  .zc:hover{transform:translate(-50%,-50%) scale(1.05)}
+  .zc img{width:30%;border-radius:10px;box-shadow:0 4px 10px rgba(80,60,160,.4)} .zc b{font-size:clamp(12px,1.4vw,16px);text-shadow:0 1px 4px rgba(80,40,120,.5)}
+  .zc i{inset:2% !important;border-color:rgba(255,90,217,.55) !important}
+  .zc small{font-size:10.5px;opacity:.9} .zc em{font-style:normal;font-size:11px;margin-top:3px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.25)}
+  .zc i{position:absolute;inset:-10px;border-radius:50%;border:1.5px solid rgba(243,155,208,.7);animation:qrPing 2.4s ease-out infinite}
+  .zmain{position:absolute;left:50%;top:76%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;padding:7px 12px 14px;border-radius:999px;background:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(244,154,200,.5);white-space:nowrap;overflow:hidden}
+  .zmain b{font-size:12px;color:#5b3b62} .zmain i{font-style:normal;color:#d58bbd;font-size:11px}
+  .zmain small{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);font-size:9px;letter-spacing:.14em;color:#c2549d}
+  .zmain u{position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,#f39bd0,transparent);background-size:30% 100%;background-repeat:no-repeat;animation:alFlow 2.4s linear infinite}
+  .zx{position:absolute;top:92%;transform:translate(-50%,-50%);padding:5px 10px;border-radius:10px;background:rgba(255,255,255,.55);outline:1.5px dashed rgba(170,140,200,.7);outline-offset:-1.5px;font-size:11.5px;color:#6b5a86;white-space:nowrap;cursor:default}
+  .zx b{font-weight:600} .zx em{font-style:normal;font-size:10px;margin-left:6px;color:#a86d00}
+  /* 第二层 */
+  .zl2{padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+  .zd-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .zd{position:relative;text-align:left;border:0;cursor:pointer;padding:10px 10px 9px;border-radius:14px;background:rgba(255,255,255,.8);border-top:4px solid var(--dc);color:#5b3b62;
+    box-shadow:0 0 0 1px rgba(220,190,230,.55),0 10px 22px -16px rgba(120,60,140,.5);transition:transform .25s,box-shadow .25s,opacity .3s}
+  .zd:hover{transform:translateY(-3px);box-shadow:0 0 0 2px var(--dc),0 14px 26px -14px rgba(120,60,140,.5)}
+  .zd h6{display:flex;align-items:center;gap:6px;margin:0 0 3px;font-size:14px} .zd h6 em{font-style:normal;font-size:9.5px;padding:0 6px;border-radius:999px;background:#fff3d6;color:#a86d00}
+  .zd p{margin:0 0 7px;font-size:11px;line-height:1.5;color:#9a7aa0;min-height:33px}
+  .zd-heat{display:flex;height:6px;border-radius:3px;overflow:hidden;background:#eee;margin-bottom:7px}
+  .zd-heat .h-ok{background:#4ade80} .zd-heat .h-part{background:#f59e0b} .zd-heat .h-todo{background:#cbd3e1} .zd-heat .h-plan{background:repeating-linear-gradient(90deg,#f39bd0 0 3px,#fff 3px 6px)}
+  .zd-mods{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px}
+  .zd-mods span{font-size:10.5px;padding:1px 6px;border-radius:6px;background:#f6f0fa;transition:opacity .3s}
+  .zd-mods span.plan{background:transparent;outline:1px dashed #d58bbd;outline-offset:-1px;color:#b0478d} .zd-mods span.todo{color:#9aa4bb} .zd-mods span.part{background:#fff3d6}
+  .zd small{font-size:10.5px;color:#9a7aa0}
+  .zd.fin{background:linear-gradient(180deg,#fff8e6,#fff);box-shadow:0 0 0 1.5px #ffc96b,0 0 26px -4px rgba(255,201,107,.75)}
+  .zd.fin::after{content:"";position:absolute;inset:-4px;border-radius:17px;border:1.5px solid rgba(255,201,107,.7);animation:qrPing 2.6s ease-out infinite;pointer-events:none}
+  .zd.dim,[data-who].dim{opacity:.28}
+  .zd-base{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:9px 12px;border-radius:14px;background:linear-gradient(135deg,#fff,#fdf3fb);box-shadow:0 0 0 1.5px #e3c07e}
+  .zd-base span{font-size:11px;font-weight:700;letter-spacing:.1em;color:#a07838;margin-right:4px}
+  .zd-base b{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;background:#fff;color:#5b3b62;box-shadow:0 0 0 1px rgba(227,192,126,.6);cursor:default}
+  .zd-base b.plan{background:transparent;box-shadow:none;outline:1px dashed #c2549d;color:#b0478d}
+  /* 第三层 */
+  .zl3{padding:14px 16px;overflow:auto}
+  .zm3 header{padding:10px 14px;border-radius:14px;background:linear-gradient(90deg,color-mix(in srgb,var(--dc) 35%,#fff),#fff);margin-bottom:12px}
+  .zm3 h4{display:flex;align-items:center;gap:8px;margin:0;font-size:20px;color:#5b3b62} .zm3 h4 em{font-style:normal;font-size:11px;padding:1px 8px;border-radius:999px;background:#fff3d6;color:#a86d00}
+  .zm3 header p{margin:3px 0 0;font-size:12.5px;color:#7a5a82}
+  .zm3-body{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px}
+  .zm3-mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;align-content:start}
+  .zm3-m{padding:10px 12px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px rgba(220,190,230,.6),0 8px 18px -14px rgba(120,60,140,.5);border-left:4px solid #4ade80;color:#5b3b62;transition:opacity .3s}
+  .zm3-m b{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:13.5px} .zm3-m b em{font-style:normal;font-size:10px;padding:0 6px;border-radius:999px;background:#e9fbf2;color:#2f8a5c}
+  .zm3-m p{margin:4px 0 6px;font-size:11.5px;line-height:1.55;color:#8a6a92}
+  .zm3-m.part{border-left-color:#f59e0b} .zm3-m.part b em{background:#fff3d6;color:#a86d00}
+  .zm3-m.todo{border-left-color:#cbd3e1;background:rgba(255,255,255,.7)} .zm3-m.todo b em{background:#eef1f6;color:#6b7591}
+  .zm3-m.plan{border-left:4px dashed #f39bd0;background:rgba(255,255,255,.55)} .zm3-m.plan b em{background:transparent;border:1px dashed #c2549d;color:#c2549d}
+  .who{display:flex;gap:4px;flex-wrap:wrap} .who i{font-style:normal;font-size:10px;padding:0 6px;border-radius:999px;background:#f3ecf9;color:#7a5a82}
+  .zm3-side h6{margin:0 0 6px;font-size:12px;color:var(--ink-soft);letter-spacing:.08em}
+  .lk{padding:7px 10px;margin-bottom:6px;border-radius:10px;background:rgba(255,255,255,.75);border-left:3px solid var(--dc);font-size:11.5px;color:#7a5a82} .lk b{display:block;font-size:12.5px;color:#5b3b62}
+  .road{list-style:none;margin:10px 0 0;padding:0 0 0 14px;border-left:2px dashed #ffc96b}
+  .road li{position:relative;margin-bottom:9px;font-size:11.5px;color:#7a5a82} .road li b{display:block;font-size:12.5px;color:#5b3b62}
+  .road li::before{content:"";position:absolute;left:-21px;top:3px;width:10px;height:10px;border-radius:50%;background:#ffc96b;box-shadow:0 0 0 3px #fff}
+  .road li.r1::before{background:#fff;border:2px solid #ffc96b;width:8px;height:8px} .road li.r2::before{background:#fff;border:2px dashed #e7a6cf;width:8px;height:8px}
+  @media (max-width:820px){ .zm{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;padding:10px} .zm-side{grid-column:1;grid-row:3;max-height:110px}
+    .zm-roles{margin-left:0} .zr{width:30%;padding:6px 8px} .zr span{display:none} .zx{font-size:10px} .zx em{display:none} .zmain b{font-size:10.5px}
+    .zd-grid{grid-template-columns:1fr 1fr} .zm3-body{grid-template-columns:1fr} }
+  /* v23 产品结构 = 深色科幻控制台：整块是一块嵌在粉色卡片里的「屏幕」（和 Agent 窗口同一个思路），
+     深色星云 + 细网格 + 慢扫描线，HUD 切角面板，等宽字体编号，霓虹描边；霓虹星球在深色底上才亮得起来 */
+  .zm{--neo-c:#8fe6ff;--neo-m:#ff5ccf;--neo-v:#a77bff;--hud:#0e0a1e;--hud2:#171330;--txt:#eef0ff;--sub:#9c9cc4;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    inset:10px 16px 14px;border-radius:18px;color:var(--txt);
+    background:radial-gradient(ellipse 80% 40% at 50% 115%,rgba(255,130,210,.16),transparent 70%),radial-gradient(ellipse 60% 70% at 42% 48%,rgba(110,80,230,.16),transparent 70%),linear-gradient(165deg,#120b24,#08061a 50%,#05040d);
+    box-shadow:0 0 0 1px rgba(214,140,255,.5),0 0 0 6px rgba(255,255,255,.2),0 0 40px -6px rgba(255,120,220,.35),0 26px 60px -20px rgba(70,20,110,.7);overflow:hidden}
+  .zm::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:linear-gradient(rgba(220,160,255,.05) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,rgba(220,160,255,.05) 1px,transparent 1px) 0 0/28px 28px;
+    -webkit-mask-image:radial-gradient(ellipse 75% 70% at 45% 50%,#000 30%,transparent 95%);mask-image:radial-gradient(ellipse 75% 70% at 45% 50%,#000 30%,transparent 95%)}
+  .zm::after{content:"";position:absolute;left:0;right:0;height:120px;top:-120px;pointer-events:none;background:linear-gradient(transparent,rgba(255,150,230,.06),transparent);animation:zmScan 7s linear infinite}
+  @keyframes zmScan{to{top:100%}}
+  .zm > *{position:relative;z-index:1}
+  .zm > .zm-space{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .zm-crumb button{color:var(--sub);font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+  .zm-crumb button.on{color:var(--neo-c);background:rgba(143,230,255,.1);box-shadow:inset 0 0 0 1px rgba(143,230,255,.4)}
+  .zm-crumb button[data-l]:not(.on):hover{color:var(--neo-m)} .zm-crumb i{color:#5b5f9a}
+  .zm-crumb .back{border-color:rgba(143,230,255,.45);color:var(--neo-c)}
+  .zm-hint{color:var(--sub);font-size:11px}
+  .zm-roles button{background:rgba(255,255,255,.04);border-color:rgba(139,92,255,.45);color:#c9ccf5;font-size:11px}
+  .zm-roles button.on{background:rgba(255,92,207,.14);border-color:var(--neo-m);color:#ffd0f3;box-shadow:0 0 12px -2px rgba(255,92,207,.6)}
+  .zm-stage,body.night .zm-stage{background:radial-gradient(ellipse at 50% 46%,rgba(20,10,40,0),rgba(6,4,16,.3));border:1px solid rgba(200,130,255,.3);box-shadow:inset 0 0 50px rgba(170,90,255,.14)}
+  .zm-side{color:var(--txt)} .zm-side .as-k{color:var(--neo-c);font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+  .zm-side h5{color:#fff;text-shadow:0 0 12px rgba(139,92,255,.6)} .zm-side .as-d{color:#b9bce6} .zm-side .as-x{color:var(--neo-m)}
+  .zm-side .as-lg{color:var(--sub)} .zm-side .as-note{color:#6f73a6}
+  .zm code{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--neo-c);opacity:.8}
+  /* 第一层 */
+  .zm .zm-lines line{stroke:var(--neo-m);stroke-width:1.2;filter:drop-shadow(0 0 3px rgba(255,92,207,.8))}
+  .zm .zm-lines line.ext{stroke:#5b6fb8;filter:none}
+  .zm .zr{background:linear-gradient(135deg,rgba(44,20,72,.92),rgba(22,10,40,.92));box-shadow:inset 0 0 0 1px rgba(139,92,255,.7),inset 0 0 18px -6px rgba(139,92,255,.7);color:var(--txt);border-radius:4px;
+    clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));padding:7px 12px 8px}
+  .zm .zr code{display:block;margin-bottom:1px} .zm .zr b{color:#fff} .zm .zr span{color:#a3a7d6}
+  .zm .zr:hover{box-shadow:inset 0 0 0 1px var(--neo-c),inset 0 0 22px -4px rgba(143,230,255,.6)}
+  .zm .zr.fin{box-shadow:inset 0 0 0 1px #ffc96b,inset 0 0 20px -4px rgba(255,201,107,.6)} .zm .zr.fin b::after{color:#ffc96b}
+  .zm .zmain{background:rgba(20,8,34,.85);box-shadow:0 0 0 1px rgba(255,92,207,.55),0 0 22px -6px rgba(255,92,207,.7);border-radius:6px}
+  .zm .zmain b{color:#fff;font-weight:600} .zm .zmain i{color:var(--neo-m)} .zm .zmain small{color:var(--neo-c);font-family:var(--mono);letter-spacing:.2em}
+  .zm .zmain u{background:linear-gradient(90deg,transparent,var(--neo-c),transparent);background-size:30% 100%;background-repeat:no-repeat}
+  .zm .zx{background:rgba(20,8,34,.7);outline-color:#4a4f8f;color:#a3a7d6;border-radius:4px} .zm .zx em{color:#ffc96b}
+  .zm .zc i{border-color:rgba(143,230,255,.45) !important}
+  /* 第二层：HUD 面板 */
+  .zm .zd{background:linear-gradient(160deg,rgba(44,22,76,.9),rgba(20,9,34,.92));color:var(--txt);border-top:0;border-radius:3px;padding:12px 12px 10px;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dc) 55%,transparent),0 0 22px -12px var(--dc);
+    clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))}
+  .zm .zd::before{content:"";position:absolute;left:0;top:0;width:34%;height:2px;background:var(--dc);box-shadow:0 0 10px var(--dc)}
+  .zm .zd:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px var(--dc),0 0 28px -8px var(--dc)}
+  .zm .zd-code{position:absolute;right:14px;top:9px}
+  .zm .zd h6{color:#fff;font-size:14.5px;letter-spacing:.04em} .zm .zd h6 em{background:rgba(255,201,107,.16);color:#ffd27a;border:1px solid rgba(255,201,107,.5)}
+  .zm .zd p{color:#a3a7d6}
+  .zd-seg{display:flex;gap:3px;margin:2px 0 8px} .zd-seg i{flex:1;height:7px;transform:skewX(-20deg);background:#2a2a52}
+  .zd-seg .s-ok{background:var(--neo-c);box-shadow:0 0 6px rgba(143,230,255,.7)} .zd-seg .s-part{background:#ffc96b;box-shadow:0 0 6px rgba(255,201,107,.7)}
+  .zd-seg .s-todo{background:#3a3d66} .zd-seg .s-plan{background:repeating-linear-gradient(90deg,var(--neo-m) 0 2px,transparent 2px 4px);box-shadow:0 0 0 1px rgba(255,92,207,.6)}
+  .zm .zd-mods span{background:rgba(143,230,255,.07);color:#cdd1ff;border-radius:2px;border-left:2px solid rgba(143,230,255,.6)}
+  .zm .zd-mods span.plan{outline:none;background:transparent;border-left:2px dashed var(--neo-m);color:#ff9be6}
+  .zm .zd-mods span.part{background:rgba(255,201,107,.12);border-left-color:#ffc96b} .zm .zd-mods span.todo{color:#6f73a6;border-left-color:#3a3d66}
+  .zm .zd small{color:var(--sub);font-family:var(--mono);font-size:10px} .zm .zd small b{color:var(--neo-c);font-weight:600}
+  .zm .zd.fin{background:linear-gradient(160deg,rgba(60,40,20,.85),rgba(18,12,30,.92));box-shadow:inset 0 0 0 1px rgba(255,201,107,.8),0 0 30px -8px rgba(255,201,107,.8)}
+  .zm .zd.fin::after{border-radius:3px;border-color:rgba(255,201,107,.6)}
+  .zd-corner{position:absolute;right:4px;bottom:4px;width:10px;height:10px;border-right:1px solid var(--dc);border-bottom:1px solid var(--dc);opacity:.8}
+  .zm .zd-base{background:rgba(20,8,34,.75);box-shadow:inset 0 0 0 1px rgba(139,92,255,.5);border-radius:3px}
+  .zm .zd-base span{color:var(--neo-v);font-family:var(--mono);font-size:10.5px}
+  .zm .zd-base b{background:rgba(139,92,255,.12);color:#dcdcff;box-shadow:inset 0 0 0 1px rgba(139,92,255,.5);border-radius:2px;font-weight:500}
+  .zm .zd-base b.plan{outline-color:var(--neo-m);color:#ff9be6}
+  .zm .zd.dim,.zm [data-who].dim{opacity:.18;filter:saturate(.3)}
+  /* 第三层 */
+  .zm .zm3 header{background:linear-gradient(90deg,color-mix(in srgb,var(--dc) 22%,transparent),transparent);border-left:3px solid var(--dc);border-radius:2px}
+  .zm .zm3 h4{color:#fff;text-shadow:0 0 14px var(--dc)} .zm .zm3 header p{color:#b9bce6} .zm .zm3 h4 em{background:rgba(255,201,107,.16);color:#ffd27a;border:1px solid rgba(255,201,107,.5)}
+  .zm .zm3-m{background:linear-gradient(160deg,rgba(44,22,76,.9),rgba(20,9,34,.92));color:var(--txt);border-left:3px solid var(--neo-c);border-radius:2px;box-shadow:inset 0 0 0 1px rgba(139,92,255,.35);
+    clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)}
+  .zm .zm3-m code{display:block;margin-bottom:2px} .zm .zm3-m b{color:#fff} .zm .zm3-m p{color:#a3a7d6}
+  .zm .zm3-m b em{background:rgba(143,230,255,.14);color:var(--neo-c)}
+  .zm .zm3-m.part{border-left-color:#ffc96b} .zm .zm3-m.part b em{background:rgba(255,201,107,.14);color:#ffd27a}
+  .zm .zm3-m.todo{border-left-color:#3a3d66;background:rgba(20,16,44,.7)} .zm .zm3-m.todo b em{background:rgba(255,255,255,.06);color:#8f93c4}
+  .zm .zm3-m.plan{border-left:3px dashed var(--neo-m);background:rgba(30,10,40,.6)} .zm .zm3-m.plan b em{background:transparent;border:1px dashed var(--neo-m);color:#ff9be6}
+  .zm .who i{background:rgba(139,92,255,.16);color:#c9ccf5;border-radius:2px}
+  .zm .zm3-side h6{color:var(--neo-c);font-family:var(--mono);font-size:10.5px;letter-spacing:.16em}
+  .zm .lk{background:rgba(20,16,50,.8);color:#a3a7d6;border-left-color:var(--dc);border-radius:2px} .zm .lk b{color:#fff}
+  .zm .road{border-left-color:rgba(255,201,107,.7)} .zm .road li{color:#a3a7d6} .zm .road li b{color:#fff}
+  .zm .road li::before{box-shadow:0 0 0 3px #120c2e,0 0 10px #ffc96b} .zm .road li.r1::before,.zm .road li.r2::before{background:#120c2e}
+  /* v19 Agent：像真实产品的窗口 */
+  .ag2{position:absolute;inset:0;display:grid;grid-template-columns:270px minmax(0,1fr);gap:18px;padding:14px 22px 18px}
+  .ag-l{overflow:auto;font-size:12px;color:var(--ink-soft)}
+  .ag-roles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0 12px}
+  .ag-roles button{border:1px solid rgba(200,150,210,.45);background:rgba(255,255,255,.4);color:var(--ink);border-radius:9px;padding:6px 4px;font-size:12px}
+  .ag-roles button.on{background:#fff;border-color:#2563eb;color:#1d4ed8;font-weight:600;box-shadow:0 4px 12px -6px rgba(37,99,235,.5)}
+  body.night .ag-roles button{background:rgba(255,255,255,.08)} body.night .ag-roles button.on{background:#fff}
+  .ag-claims > div{display:grid;grid-template-columns:22px 1fr;gap:0 6px;padding:7px 0;border-top:1px solid rgba(200,150,190,.22)}
+  .ag-claims span{grid-row:span 2;font-size:11px;color:#8aa0c8;font-weight:700;padding-top:1px}
+  .ag-claims b{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink)} .ag-claims i{font-style:normal;font-size:11px;line-height:1.5}
+  .ag-claims em{font-style:normal;font-size:10px;padding:0 6px;border-radius:999px;font-weight:600}
+  .cs-ok{background:#e9fbf2;color:#2f8a5c} .cs-part{background:#fff3d6;color:#a86d00} .cs-plan{border:1px dashed #c2549d;color:#c2549d}
+  .ag-why{margin-top:10px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.4);font-size:11px;line-height:1.7} .ag-why b{display:block;color:var(--ink);font-size:12px;margin-bottom:2px}
+  body.night .ag-why{background:rgba(255,255,255,.06)}
+  .agw{min-height:0;display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:#f5f7fb;color:#1f2a44;
+    box-shadow:0 24px 50px -18px rgba(60,70,150,.5),0 0 0 1px rgba(255,255,255,.95),0 0 0 6px rgba(255,255,255,.25)}
+  .agw-top{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border-bottom:1px solid #e6eaf2;font-size:12px;color:#5b6784}
+  .agw-top b{margin-left:auto;font-size:11px;color:#2563eb;background:#eaf1ff;padding:2px 8px;border-radius:999px}
+  .agw-top .dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:ledBlink 1.6s infinite steps(1)}
+  .agw-body{flex:1;min-height:0;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .agw-q{align-self:flex-end;max-width:82%;padding:9px 13px;border-radius:14px 14px 4px 14px;background:#2563eb;color:#fff;font-size:13.5px;line-height:1.6}
+  .agw-a{padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #e6eaf2}
+  .agw-ah{display:flex;align-items:center;gap:8px;font-size:11px;color:#8792ab;margin-bottom:8px} .agw-ah span{font-weight:700;color:#1f2a44;font-size:12px} .agw-ah b{font-weight:400}
+  .agw-steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .agw-steps span{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:7px;background:#f1f4f9;color:#9aa4bb;transition:background .3s,color .3s}
+  .agw-steps i{font-style:normal;font-size:10px;font-weight:700} .agw-steps span.on{background:#e9fbf2;color:#1f7a4d} .agw-steps span.on i::before{content:"✓ "}
+  .agw-txt{margin:0 0 10px;font-size:13.5px;line-height:1.8;color:#1f2a44;min-height:48px}
+  .agw-evi{border-radius:10px;background:#f8fafc;border:1px solid #e9edf4;padding:8px 10px}
+  .agw-evi.flash{animation:eviFlash .9s ease-out}
+  .agw-eh{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.08em;color:#8792ab;margin-bottom:6px}
+  .agw-el{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:5px 10px}
+  .ev{display:flex;align-items:center;gap:7px;font-size:12px;color:#9aa4bb;opacity:.5;transition:opacity .3s,color .3s}
+  .ev i{width:7px;height:7px;border-radius:50%;background:#cbd3e1} .ev span{flex:1} .ev em{font-style:normal;font-size:10.5px;padding:0 6px;border-radius:999px;background:#eef1f6}
+  .ev.on{opacity:1;color:#1f2a44} .ev.on.ok i{background:#22c55e} .ev.on.ok em{background:#e9fbf2;color:#1f7a4d}
+  .ev.on.part i{background:#f59e0b} .ev.on.part em{background:#fff3d6;color:#a86d00} .ev.on.plan i{background:#cbd3e1} .ev.on.plan em{color:#6b7591}
+  .agw-next{margin-top:8px;font-size:12px;color:#2563eb;min-height:18px}
+  .agw-todo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;border-radius:10px;background:#fff;border:1px solid #e6eaf2;font-size:12px;color:#5b6784;opacity:.4;transition:opacity .4s}
+  .agw.done .agw-todo{opacity:1}
+  .agw-todo span{font-weight:700;color:#1f2a44} .agw-todo b{color:#dc2626;font-weight:600} .agw-todo em{font-style:normal;flex:1;min-width:120px}
+  .agw-todo i{font-style:normal;font-size:10.5px;border:1px dashed #c2549d;color:#c2549d;padding:0 6px;border-radius:999px} .agw-todo a{color:#2563eb}
+  .agw-meta{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#9aa4bb}
+  .agw-foot{display:flex;justify-content:flex-end;gap:8px;padding:9px 14px;background:#fff;border-top:1px solid #e6eaf2}
+  .agw-foot button{border:1px solid #d7deea;background:#fff;color:#1f2a44;border-radius:8px;padding:5px 12px;font-size:12px} .agw-foot .agw-raw{color:#2563eb;border-color:#bfd2ff}
+  @media (max-width:820px){ .ag2{grid-template-columns:1fr;grid-template-rows:auto auto;align-content:start;overflow:auto;padding:10px} .ag-l{overflow:visible} .ag-claims,.ag-why{display:none} .agw{min-height:520px} }
   /* 资管展开：「我做了什么」 */
   .minev{position:absolute;inset:0;display:grid;grid-template-columns:290px minmax(0,1fr);gap:20px;padding:16px 22px 20px}
   .own{display:flex;flex-direction:column;gap:5px;overflow:auto;padding-right:2px;scrollbar-width:thin;scrollbar-color:#f1b9d6 transparent}
@@ -465,7 +820,7 @@
   .oh small{display:block;font-size:11px;font-weight:400;color:var(--ink-soft);margin-top:2px}
   .ow{flex:none;display:flex;gap:9px;align-items:flex-start;padding:7px 10px;border-radius:12px;cursor:pointer;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.4);transition:transform .25s,background .25s,box-shadow .25s}
   .ow .lg{margin-top:4px}
-  .ow.mine .lg{background:var(--c);box-shadow:0 0 6px var(--c)}
+  .ow.mine .lg{background:var(--c,#f49ac8);box-shadow:0 0 6px var(--c,#f49ac8)}
   .ow b{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:13px}
   .ow span{display:block;font-size:11px;line-height:1.45;color:var(--ink-soft);margin-top:2px}
   .ow.co{background:rgba(255,255,255,.22)} .ow.plan{background:transparent;border:1.5px dashed rgba(194,84,157,.4)}
@@ -529,11 +884,25 @@ if (!/^https?:$/.test(location.protocol)) addEventListener('DOMContentLoaded', (
   document.body.appendChild(d);
 });
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script type="importmap">
-{"imports":{
-  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-}}
+<!-- v24：three / gsap 放在本地 vendor/（国内常打不开 jsdelivr；iPadOS 16.4 以下也不支持 importmap），模块里直接写相对路径 -->
+<script src="vendor/gsap.min.js"></script>
+<script>
+/* 开场诊断：12 秒还没进到总览，就在页面上说明卡在哪一步（手机上看不到控制台） */
+window.__boot = { stage:'html', err:[], t0:Date.now() };
+addEventListener('error', e => { const m = e.message || (e.target && (e.target.src || e.target.href) ? '加载失败 ' + (e.target.src || e.target.href) : ''); if (m && __boot.err.length < 6) __boot.err.push(String(m).slice(0, 160)); }, true);
+addEventListener('unhandledrejection', e => { if (__boot.err.length < 6) __boot.err.push(String(e.reason && e.reason.message || e.reason).slice(0, 160)); });
+__boot.show = function(why){
+  if (__boot.ready || document.getElementById('bootErr')) return;
+  const tips = { html:'页面脚本没有运行（浏览器版本太旧，或脚本被拦截）', module:'脚本已运行，但 WebGL 没建起来', webgl:'WebGL 正常，图片还没加载完（网络慢或被拦截）', gl:'这台设备不支持 WebGL，或被浏览器关掉了' };
+  const d = document.createElement('div'); d.id = 'bootErr';
+  d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99;max-width:min(92vw,520px);background:rgba(255,248,252,.97);color:#5b3b62;font:13px/1.7 "PingFang SC",system-ui,sans-serif;padding:14px 18px;border-radius:16px;box-shadow:0 10px 40px rgba(120,60,140,.25)';
+  d.innerHTML = '<b style="font-size:15px">开场还没加载出来</b><br>卡在：' + (tips[why || __boot.stage] || __boot.stage) + (__boot.img ? '（图片 ' + __boot.img + '）' : '') +
+    (__boot.err.length ? '<br><span style="opacity:.75">' + __boot.err.map(s => s.replace(/</g, '&lt;')).join('<br>') + '</span>' : '') +
+    '<br><span style="opacity:.6;font-size:11px">' + navigator.userAgent.replace(/</g, '&lt;') + '</span>' +
+    '<br><a href="javascript:location.reload()" style="color:#c2418f">重新加载</a>　<a href="?lite" style="color:#c2418f">用流畅模式打开</a>　<a href="javascript:void(document.getElementById(\'bootErr\').remove())" style="color:#998">关闭</a>';
+  document.body.appendChild(d);
+};
+setTimeout(() => __boot.show(), 12000);
 </script>
 </head>
 <body class="ov">
@@ -565,7 +934,8 @@ if (!/^https?:$/.test(location.protocol)) addEventListener('DOMContentLoaded', (
 <div id="toast"></div>
 
 <script type="module">
-import * as THREE from 'three';
+import * as THREE from './vendor/three.module.min.js';
+window.__boot && (__boot.stage = 'module');
 
 /* ==================================================================
    仲夏夜扭蛋机 v7 · 画为主，代码为辅
@@ -591,11 +961,11 @@ const PROJECTS = [
   { id:'site', color:'#f49ac8', cap:'peach', no:'CAPSULE 01', title:'海外站 · doshglobal.com', role:'图片选用 · 版面层级 · 落地',
     sum:'集团卫浴与建筑陶瓷的海外官网，展示 Monarch 卫浴与 Oceano 瓷砖。首页与六个内页的图片和版面，由我出方案并落地。',
     tags:['官网改版','视觉选图','版面层级','后台手册'], icon:'tile', url:'https://www.doshglobal.com' },
-  { id:'asset', color:'#b79ae3', cap:'purple', no:'CAPSULE 02', title:'水华资管平台 · 算力资产台账', role:'资产域 · 两人团队',
-    sum:'GPU 服务器从到货、验收上架到租赁结算的全生命周期台账。我做资产这一半：到货验收、审批点和流程可视化，也负责把各条分支合并上线。',
-    tags:['到货验收','审批点 × 11','流程可视化','合并收口'], icon:'server', url:'https://sham.do-sh.top',
+  { id:'asset', color:'#b79ae3', cap:'purple', no:'CAPSULE 02', title:'水华资管平台 · 算力资产台账', role:'项目统筹 · 四人团队',
+    sum:'GPU 服务器从采购、到货验收、分配使用到维修回收的全生命周期平台。我负责项目统筹：需求与进度、到货验收和资产域审批，以及整体测试与合并上线。',
+    tags:['项目统筹','到货验收','审批接入','测试与上线'], icon:'server', url:'https://sham.do-sh.top',
     stamp:['ASSET · RECEIVING · ACCEPTED ·', '已验收'], slipLink:false,
-    next:{ h:'附赠贴纸 · 下一步（规划中）', tags:['手机扫码验收','移动审批','Agent 发起审批单'] } },
+    next:{ h:'附赠贴纸 · 下一步（规划中）', tags:['运行数据接入','经营分析','Agent + 移动 App'] } },
   { id:'research', color:'#8cd7ea', cap:'blue', no:'CAPSULE 03', title:'算力控股调研系统', role:'资料解析 · 报告 Agent · 引用回查',
     sum:'把企业资料变成每个结论都能指回来源的可研报告——9 章、61 条引用，无法确证的内容单列「待核实」。',
     tags:['Agent 流水线','证据链','可研报告','引用回查'], icon:'doc' },
@@ -667,7 +1037,10 @@ const floorScale = y => clamp(0.62 + 0.38*(y - 250)/(800 - 250), 0.5, 1.15);   /
 
 /* ------------------------------------------------------------------ 渲染器 */
 const canvas = $('#ov');
-const R = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:true, premultipliedAlpha:true, powerPreference:'high-performance' });
+let R;
+try { R = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:true, premultipliedAlpha:true, powerPreference:'high-performance' }); }
+catch (e){ __boot.err.push(String(e && e.message || e)); __boot.show('gl'); throw e; }
+__boot.stage = 'webgl';
 const QUAL = { max:Math.min(devicePixelRatio, 2), pr:Math.min(devicePixelRatio, 2), acc:0, n:0, warm:0, level:0, fpsEl:null, fAcc:0, fN:0, hold:0, good:0, fail:{} };
 R.setPixelRatio(QUAL.pr); R.setSize(innerWidth, innerHeight, false); R.setClearColor(0x000000, 0); R.autoClear = false;
 const cam = new THREE.OrthographicCamera(0, innerWidth, 0, innerHeight, -10, 10); cam.position.z = 5;
@@ -675,6 +1048,8 @@ const clScene = new THREE.Scene(), ovScene = new THREE.Scene(), fxScene = new TH
 const unitPlane = new THREE.PlaneGeometry(1, 1);
 
 const mgrOV = new THREE.LoadingManager(), mgrOVLater = new THREE.LoadingManager(), mgrCL = new THREE.LoadingManager();
+mgrOV.onProgress = (u, n, total) => { __boot.img = n + '/' + total; };
+mgrOV.onError = u => { if (__boot.err.length < 6) __boot.err.push('图片加载失败 ' + u); };
 /* v13 启动分批（不减特效，只改「什么时候做」）：
    1. 开局只下载总览要用的图；总览图到齐后，才开始下载夜景和近景的图（不抢网速）
    2. 夜景 / 近景的图下载好以后先不传进显卡，等画面安静时（线稿停着等点击、或开场上色结束后）每隔几帧传一张
@@ -1441,12 +1816,29 @@ const SFX = {
     if (this.on){ this.ctx.resume(); this.loading.then(() => { if (this.on) this.startLoop(); }); }
     else this.stopLoop();
   },
-  startLoop(){
+  // v16：每段循环自己的音量和精确循环长度（夜场循环更亮一点；按小节长度循环，不受编码补零影响）
+  LOOP_LV:{ musicbox_loop:0.11, night_loop:0.15 }, LOOP_LEN:{ night_loop:30.0 },
+  NIGHT_AT:6.375,   // 灯光秀配乐里过门结束、落到夜场循环第一拍的时刻（tools/assets/make_night_v2.py 的 IGNITE_TO_LOOP）
+  loopLevel(){ return this.LOOP_LV[this.loopSrc?.name || this.loopName] ?? this.LOOP_G; },
+  // at：音频时钟上的开始时刻（不给就是现在，淡入 1.5 秒）；给了就在那一拍直接以正常音量开始
+  startLoop(at){
     const name = this.buf[this.loopName] ? this.loopName : 'musicbox_loop';
     if (this.loopSrc || !this.buf[name] || this.holdLoop) return;
-    const s = this.ctx.createBufferSource(); s.buffer = this.buf[name]; s.loop = true;
-    const g = this.ctx.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(this.LOOP_G, this.ctx.currentTime + 1.5);
-    s.connect(g); g.connect(this.music); s.start(); this.loopSrc = s; this.loopGain = g;
+    const s = this.ctx.createBufferSource(); s.buffer = this.buf[name]; s.loop = true; s.name = name;
+    const len = this.LOOP_LEN[name]; if (len && len <= s.buffer.duration){ s.loopStart = 0; s.loopEnd = len; }
+    const lv = this.LOOP_LV[name] ?? this.LOOP_G, now = this.ctx.currentTime, g = this.ctx.createGain();
+    if (at != null && at > now){ g.gain.value = 0; g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(lv, at + 0.012); }
+    else { g.gain.value = 0; g.gain.linearRampToValueAtTime(lv, now + 1.5); }
+    s.connect(g); g.connect(this.music); s.start(at != null && at > now ? at : 0); this.loopSrc = s; this.loopGain = g;
+  },
+  // 灯光秀：放配乐，原来的音乐盒在 1.6 秒里淡出；夜场循环排在配乐的落拍点上，接得严丝合缝
+  nightCue(){
+    this.loopName = 'night_loop';
+    if (!this.on || !this.ctx){ return; }
+    if (this.loopSrc){ const s = this.loopSrc, g = this.loopGain.gain, now = this.ctx.currentTime;
+      g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + 1.6); setTimeout(() => { try { s.stop(); } catch (e) {} }, 1800); this.loopSrc = null; }
+    const src = this.track('night_ignite', 0.85);
+    if (src && this.buf.night_loop && !this.holdLoop) this.startLoop(src.t0 + this.NIGHT_AT);
   },
   stopLoop(){ if (!this.loopSrc) return; const s = this.loopSrc, g = this.loopGain; g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4); setTimeout(() => s.stop(), 500); this.loopSrc = null; },
   // 整段配乐（不占音效的同时发声名额）
@@ -1454,14 +1846,14 @@ const SFX = {
     if (!this.on || !this.buf[name]) return null;
     if (this.ctx.state !== 'running') this.ctx.resume();
     const s = this.ctx.createBufferSource(); s.buffer = this.buf[name];
-    const g = this.ctx.createGain(); g.gain.value = gain*0.75; s.connect(g); g.connect(this.music); s.start();
-    this.trackUntil = this.ctx.currentTime + s.buffer.duration; return s;
+    const g = this.ctx.createGain(); g.gain.value = gain*0.75; s.connect(g); g.connect(this.music); s.t0 = this.ctx.currentTime + 0.02; s.start(s.t0);
+    this.trackUntil = s.t0 + s.buffer.duration; return s;
   },
   // 配乐响起时把背景音乐盒压低，几秒后再抬回来
   duck(sec, level = 0.06){
     if (!this.loopGain) return; const g = this.loopGain.gain, now = this.ctx.currentTime;
     g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(level, now + 0.4);
-    g.setValueAtTime(level, now + sec); g.linearRampToValueAtTime(this.LOOP_G, now + sec + 2.0);
+    g.setValueAtTime(level, now + sec); g.linearRampToValueAtTime(this.loopLevel(), now + sec + 2.0);
   },
   // 音效：同类音有最短间隔（太密的直接跳过）；玻璃音最多同时 3 个、全部音效最多 6 个，超出时把最早那个淡出；
   // 玻璃音的余音缩短到 1.3 秒，不再糊成一片；配乐在放的时候音效整体小一点
@@ -1837,49 +2229,120 @@ function buildSite(body, start = 0){
 }
 
 function buildAsset(body, focus = -1){
-  body.innerHTML = `<div class="av"><div class="seg"><button data-t="mine">做了什么</button><button data-t="ui">平台界面</button><button data-t="hw">硬件拆解</button><button data-t="layers">产品结构</button><button data-t="entry">平台入口</button></div><div class="avb"></div></div>`;
+  // 点抽屉进来：目标是标签页名就直接打开那一页，否则打开「做了什么」并滚到那一段
+  const tgt = focus >= 0 ? ASSET_RACK[focus]?.[4] : null, tab0 = typeof tgt === 'string' && tgt !== 'next' ? tgt : 'mine';
+  body.innerHTML = `<div class="av"><div class="seg"><button data-t="mine">做了什么</button><button data-t="ui">平台界面</button><button data-t="agent">Agent 问答</button><button data-t="hw">硬件拆解</button><button data-t="layers">产品结构</button><button data-t="entry">平台入口</button></div><div class="avb"></div></div>`;
   const box = body.querySelector('.avb'), btns = [...body.querySelectorAll('.seg button')];
-  const views = { mine:b => buildMine(b, focus), ui:buildUI, hw:buildHW, layers:buildLayers, entry:buildEntry };
-  const show = t => { btns.forEach(b => b.classList.toggle('on', b.dataset.t === t)); box.innerHTML = ''; views[t](box); focus = -1; };
+  let go = tab0 === 'mine' && tgt != null ? String(tgt) : null;
+  const views = { mine:b => buildMine(b, go), ui:buildUI, agent:buildAgent, hw:buildHW, layers:buildLayers, entry:buildEntry };
+  const show = t => { btns.forEach(b => b.classList.toggle('on', b.dataset.t === t)); AGENT.tok++; box.innerHTML = ''; views[t](box); go = null; };
   btns.forEach(b => b.onclick = () => { if (!b.classList.contains('on')) show(b.dataset.t); });
-  show('mine');
+  show(tab0);
 }
-/* 「做了什么」：左边是机柜的七层，右边三个案例 + 下一步 */
+/* 「做了什么」（v18，按汇报第 13 页的分工）：左边先是四人团队各自的分工（只写岗位、不写名字），再是我负责的部分；
+   右边四个案例 + 下一步（汇报第 7 页的路线图）。跨模块配合不改变各自的归属，不能写得像别人没做事 */
+const TEAM = [
+  ['项目统筹', '进度与功能规划、任务发布；到货验收与工单维修；整体测试与问题跟进', true],
+  ['核心开发', '从零搭建；设备爆炸图、采购、项目管理与 Agent 的主要开发'],
+  ['资产与权限', '资产总览与列表；角色权限；审批、系统管理与日志'],
+  ['机房与协同', '自研自用；机房功能；访客系统与机房访问协同'],
+];
+const MY_PARTS = [   // [名字, 对应案例]
+  ['需求、进度与任务发布', '0'], ['到货验收与工单维修', '1'], ['资产域审批点 · 流程图 · 消息中心', '2'],
+  ['整体测试与合并上线（各模块的测试与问题跟进）', '3'],   // v23：项目台账、开票这些只做了测试，不算自己开发，不单列
+];
 const ASSET_CASES = [
-  { t:'到货逐件验收', k:'到货',
-    q:'到货明细和采购申报对不上；验收结论被改过以后，说不清当时验的是什么。',
-    d:'按采购申报逐件核对 SN；每次验收存一版、不覆盖旧版，审批生效时冻结整批快照。采购能看到验收结果，到货确认只能由机房做。',
-    r:'每台机器都能追溯到哪一批到货、谁验的、当时的结论。配有专项测试。' },
-  { t:'所有写操作都走审批', k:'审批',
+  { t:'项目统筹：先把口径对齐', k:'统筹',
+    q:'机房、采购、商务、财务各有说法，同一个字段在不同人那里不是一回事；四个人并行开发，容易各做各的。',
+    d:'把业务口述整理成需求文档、业务术语、字段字典、按岗位的页面设计和接口契约；排进度、发任务，列出待确认清单，逐项找业务拍板。',
+    r:'四个模块按同一套口径开发，交接和改动有文档可查。' },
+  { t:'到货验收与工单维修', k:'到货 · 维修',
+    q:'到货明细和采购申报对不上；验收结论改过以后，说不清当时验的是什么；设备坏了，记录散在各处。',
+    d:'到货按采购申报逐件核对 SN，每次验收存一版、不覆盖旧版，审批生效时冻结整批快照；采购能看结果，到货确认只能由机房做。维修走工单，记录回到同一份设备档案。',
+    r:'每台机器都能追溯到哪一批到货、谁验的、当时的结论，以及修过几次。配有专项测试。' },
+  { t:'资产域的写操作接入审批', k:'审批',
     q:'资产状态、机柜位置、SN 这些关键字段，原来好几个入口都能直接改。',
-    d:'资产域定义 11 个审批点，写操作只能经审批引擎生效；按风险配审批人，不能自己批自己。再做流程图：每单卡在哪一环、等了多久。',
-    r:'每次改动都有单据可查。这些审批点也是以后接 Agent 的口子：Agent 只能发起审批单，不能直接改数据。' },
-  { t:'多分支合并收口', k:'工程协作',
-    q:'多人并行开发：数据库迁移编号撞车，合并时字段被吃掉，同一个状态在不同页面口径不一样。',
-    d:'统一并分支：重排迁移、修主干的测试和类型构建，对齐资产状态七值、可租口径和看板下钻，给列表接口设 SQL 查询次数预算。',
-    r:'主干始终能构建、测试通过，各页面的数字对得上。' },
+    d:'和负责审批引擎的同事配合，定义资产域 11 个审批点，写操作只能经审批生效；再做流程图和消息中心：每单卡在哪一环、等了多久，待办集中到一处。',
+    r:'每次改动都有单据可查。这些审批点也是 Agent 的边界：Agent 只生成待确认的提案，人确认后才进审批。' },
+  { t:'整体测试与合并上线', k:'测试 · 集成',
+    q:'四人并行开发：数据库迁移编号撞车，合并时字段被吃掉，同一个状态在不同页面口径不一样。',
+    d:'负责整体测试和问题跟进；统一并分支：重排迁移、修主干的测试和类型构建，对齐资产状态七值、可租口径和看板下钻，给列表接口设查询次数预算。',
+    r:'主干始终能构建、测试通过，各页面的数字对得上；12 月初组织机房、采购、财务公测。' },
 ];
 const ASSET_NEXT = [
-  ['手机扫码验收', '到货现场逐件扫 SN，结果直接进验收单'],
-  ['移动审批', '复用消息中心的待办，在手机上批'],
-  ['Agent 发起审批单', '用一句话发起调拨、报修；Agent 只能起草，由人确认后才生效'],
+  ['运行数据', 'BMC 硬件状态和 Prometheus 监控接到设备档案上，首批设备试点'],
+  ['经营分析', '在合同、开票和收款记录上，看清项目的投入与回收'],
+  ['Agent + 移动 App', '一个入口按岗位提问、扫码、看待办；Agent 只读查询，操作只生成待确认的提案'],
 ];
 function buildMine(body, focus){
-  const own = ASSET_RACK.map(([kind, n, t, c], i) => `<div class="ow ${kind}" data-i="${i}" data-c="${c}" style="--c:${RACK_C[i] || '#fff'}"><i class="lg ${kind}"></i><div><b>${n}${RACK_BADGE[kind] ? `<em class="${kind}">${RACK_BADGE[kind]}</em>` : ''}</b><span>${t}</span></div></div>`).join('');
+  const team = TEAM.map(([n, t, me]) => `<div class="tm${me ? ' me' : ''}"><b>${n}${me ? '<em class="mine">我</em>' : ''}</b><span>${t}</span></div>`).join('');
+  const mine = MY_PARTS.map(([n, c]) => `<div class="ow mine" data-c="${c}"><i class="lg mine"></i><div><b>${n}</b></div></div>`).join('');
   const cases = ASSET_CASES.map((c, i) => `<article class="cs" data-c="${i}"><header><span class="n">0${i + 1}</span><h4>${c.t}</h4><em>${c.k}</em></header>
       <div class="qdr"><div><small>问题</small><p>${c.q}</p></div><div><small>我的做法</small><p>${c.d}</p></div><div><small>结果</small><p>${c.r}</p></div></div></article>`).join('');
   const nx = ASSET_NEXT.map(([n, t], i) => `<div class="nx"><span class="n">${i + 1}</span><b>${n}</b><span>${t}</span></div>`).join('<i class="arw">→</i>');
-  body.innerHTML = `<div class="minev"><aside class="own"><div class="oh">系统的七层<small>从下往上是资产的一生，最上面是下一步</small></div>${own}</aside>
-    <div class="cases">${cases}<section class="cs next" data-c="next"><header><span class="n">→</span><h4>下一步：手机 App + Agent</h4><em class="plan">规划中</em></header><div class="nxs">${nx}</div></section></div></div>`;
+  body.innerHTML = `<div class="minev"><aside class="own"><div class="oh">四人团队<small>按汇报分工；跨模块配合不改变各自的归属</small></div>${team}
+      <div class="oh oh2">我负责的部分</div>${mine}</aside>
+    <div class="cases">${cases}<section class="cs next" data-c="next"><header><span class="n">→</span><h4>下一步：运行数据 · 经营分析 · 智能入口</h4><em class="plan">规划中</em></header><div class="nxs">${nx}</div></section></div></div>`;
   const rows = [...body.querySelectorAll('.ow')], cards = [...body.querySelectorAll('.cs')], sc = body.querySelector('.cases');
-  const hi = c => cards.forEach(el => el.classList.toggle('hot', c !== '-1' && el.dataset.c === c));
+  const hi = c => cards.forEach(el => el.classList.toggle('hot', !!c && el.dataset.c === c));
   const go = (c, smooth = true) => { const el = cards.find(x => x.dataset.c === c); if (!el) return;
     sc.scrollTo({ top:el.offsetTop - sc.offsetTop - 8, behavior:smooth ? 'smooth' : 'auto' });
     el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); };
   rows.forEach(r => { r.onmouseenter = () => hi(r.dataset.c); r.onmouseleave = () => hi(''); r.onclick = () => { rows.forEach(x => x.classList.toggle('on', x === r)); go(r.dataset.c); }; });
-  gsap.from(rows, { x:-14, opacity:0, duration:.35, stagger:.04, ease:'power2.out' });
+  gsap.from(body.querySelectorAll('.tm, .ow'), { x:-14, opacity:0, duration:.35, stagger:.04, ease:'power2.out' });
   gsap.from(cards, { y:18, opacity:0, duration:.45, stagger:.08, ease:'back.out(1.4)', delay:.1 });
-  if (focus >= 0){ rows[focus]?.classList.add('on'); setTimeout(() => go(String(ASSET_RACK[focus][3])), 450); }
+  if (focus){ rows.find(r => r.dataset.c === focus)?.classList.add('on'); setTimeout(() => go(focus), 450); }
+}
+/* v19 Agent 演示（按汇报第 11 页重做，像真实产品界面而不是聊天玩具）：
+   左边 = 按岗位提问（6 个岗位 → 6 个场景）+ 四类能力和各自的状态 + 四道可信边界；
+   右边 = 产品窗口：问题 → 三步取数依次完成 → 回答逐字出现 → 依据清单逐条标出「已关联 / 接入后补充 / 待完善」→ 继续追问、我的待办、会话信息。
+   场景和示例回答都来自汇报；Agent 是团队作品 */
+const AGENT = { tok:0, scene:0 };
+const AG_ROLES = ['总领导', '商务领导', '机房领导', '销售领导', '采购领导', '财务负责人'];
+const AG_SCENES = [
+  { q:'A 项目现在用了哪些设备？有没有未闭环的故障工单？', steps:['定位项目与设备', '关联合同与交付', '核对工单与备用机'], a:'示例回答：该项目在租 12 台 4090，合同 12 月交付；其中 2 台有未闭环硬件工单；仓内有同规格备用机 1 台。建议先换备用机，原机返修。', next:'继续追问：展开同批设备与原始工单。', src:['资产档案', '项目 · 合同', '工单 · 部件', '预留 · 备用机', 'BMC · Prometheus'], st:['ok', 'ok', 'ok', 'ok', 'after'] },
+  { q:'哪些项目需要协调交付、款项或设备异常？', steps:['关联项目与资产', '核对合同与款项', '标明时间与缺失信息'], a:'示例回答：关联项目交付、合同与款项，结合设备异常及维修记录，呈现需要协调的事项和依据。', next:'继续追问：展开项目明细与原始依据。', src:['项目 / 资产', '合同 / 财务', '异常记录', 'BMC / Prometheus', '来源与时间'], st:['ok', 'ok', 'ok', 'after', 'plan'] },
+  { q:'（BMC 接入后）某机房一台 4090 掉卡，影响哪些项目和交付？', steps:['定位设备与归属', '关联项目与合同', '核对同批与工单'], a:'示例回答：该设备挂在 A 项目的租赁占用上，合同 12 月交付；同批设备有 2 条工单未闭环；仓内有同规格备用机。建议先换备用机，原机返修。', next:'继续追问：展开同批设备与原始工单。', src:['资产档案', '项目 · 合同', '工单 · 部件', '预留 · 备用机', 'BMC · Prometheus'], st:['ok', 'ok', 'ok', 'ok', 'after'] },
+  { q:'客户项目的设备是否就绪，运行状态是否支持交付判断？', steps:['关联项目与资产', '核对合同与交付', '标明缺失信息'], a:'示例回答：关联需求、设备分配与可用状态，补充运行信息与缺失提示，供交付前核对。', next:'继续追问：展开设备明细与原始依据。', src:['项目 / 资产', '合同 / 交付', '异常记录', 'BMC / Prometheus', '来源与时间'], st:['ok', 'ok', 'ok', 'after', 'plan'] },
+  { q:'哪些设备异常需要关联采购来源与供应商跟进？', steps:['定位设备与工单', '关联采购与验收', '核对供应商跟进'], a:'示例回答：沿设备档案关联采购、验收及异常记录，形成供应商跟进依据；运行信息待接入后补充。', next:'继续追问：展开采购单与验收记录。', src:['资产档案', '采购 / 验收', '工单 · 部件', 'BMC / Prometheus', '来源与时间'], st:['ok', 'ok', 'ok', 'after', 'plan'] },
+  { q:'某项目的设备投入、合同及款项能否核对？', steps:['关联项目与设备', '核对合同与开票', '核对回款与期间'], a:'示例回答：关联设备归属、合同、开票与收款，按财务确认口径核对；运行状态作为业务补充信息。', next:'继续追问：展开开票与回款明细。', src:['项目 / 资产', '合同 / 财务', '开票 / 回款', 'BMC / Prometheus', '来源与时间'], st:['ok', 'ok', 'ok', 'after', 'plan'] },
+];
+const AG_ST = { ok:['已关联', 'ok'], part:['部分接入', 'part'], after:['接入后补充', 'part'], plan:['待完善', 'plan'] };
+const AG_CLAIMS = [['查询与核对', '已具备', 'ok', '采购、验收、资产、项目、合同与工单，按权限查询并列出差异线索'], ['运行与影响', '随接入展开', 'part', '结合 BMC、Prometheus 与维修记录，定位影响项目'],
+  ['业务与经营汇总', '部分具备', 'part', '设备使用、采购进展、项目执行与经营情况，按岗位汇总'], ['统一待办', '规划', 'plan', '按岗位集中待办，提示超期，直达处理页面']];
+function buildAgent(body){
+  body.innerHTML = `<div class="ag2"><aside class="ag-l">
+      <div class="oh">同一个入口 · 按岗位提问</div><div class="ag-roles">${AG_ROLES.map((r, i) => `<button data-s="${i}">${r}</button>`).join('')}</div>
+      <div class="ag-claims">${AG_CLAIMS.map(([n, t, k, d], i) => `<div><span>0${i + 1}</span><b>${n}<em class="cs-${k}">${t}</em></b><i>${d}</i></div>`).join('')}</div>
+      <div class="ag-why"><b>四道可信边界</b>身份即权限 · 以提问人岗位执行，域、字段、行级三层收窄<br>取数有边界 · 模板直查优先，自由查询只走安全视图<br>回答有依据 · 来源统一编号，可回到原始记录<br>操作有人确认 · 只生成待确认提案，人工确认后进审批</div>
+      <p class="ag-note">场景与示例回答来自阶段汇报 · Agent 为团队作品</p></aside>
+    <div class="agw"><div class="agw-top"><span class="dot"></span>水华 Agent · 场景演示<b>可追溯问答</b></div>
+      <div class="agw-body"><div class="agw-q"></div>
+        <div class="agw-a"><div class="agw-ah"><span>回答</span><b>基于当前权限 · 只读查询</b></div><div class="agw-steps"></div><p class="agw-txt"><span></span><i class="ag-caret"></i></p>
+          <div class="agw-evi"><div class="agw-eh"><span>依据 / EVIDENCE</span><span>来源与接入状态</span></div><div class="agw-el"></div></div><div class="agw-next"></div></div>
+        <div class="agw-todo"><span>我的待办</span><b>3 项 · 1 项超期</b><em>到货验收差异待确认 · 今天</em><i>汇总规划中</i><a>去处理 ›</a></div>
+        <div class="agw-meta"><span>会话 09:41 · 只读查询</span><span>可见范围：本人职责与授权项目</span></div></div>
+      <div class="agw-foot"><button class="agw-raw">查看原始记录 ↗</button><button class="agw-re">重播 ↻</button></div></div></div>`;
+  const $q = s => body.querySelector(s), roles = [...body.querySelectorAll('.ag-roles button')];
+  const wait = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+  const run = async i => {
+    const my = ++AGENT.tok, ok = () => my === AGENT.tok && body.isConnected, S0 = AG_SCENES[i]; AGENT.scene = i;
+    roles.forEach((b, j) => b.classList.toggle('on', j === i));
+    $q('.agw-q').textContent = S0.q; $q('.agw-txt span').textContent = ''; $q('.ag-caret').style.display = '';
+    $q('.agw-steps').innerHTML = S0.steps.map((x, k) => `<span><i>0${k + 1}</i>${x}</span>`).join('');
+    $q('.agw-el').innerHTML = S0.src.map((x, k) => { const [t, c] = AG_ST[S0.st[k]] || AG_ST.ok; return `<div class="ev ${c}"><i></i><span>${x}</span><em>${t}</em></div>`; }).join('');
+    $q('.agw-next').textContent = ''; body.querySelector('.agw').classList.remove('done');
+    gsap.fromTo($q('.agw-q'), { opacity:0, y:10 }, { opacity:1, y:0, duration:.3 });
+    for (const el of body.querySelectorAll('.agw-steps span')){ await wait(380); if (!ok()) return; el.classList.add('on'); }
+    for (const ch of S0.a){ await wait(18); if (!ok()) return; $q('.agw-txt span').textContent += ch; }
+    $q('.ag-caret').style.display = 'none';
+    for (const el of body.querySelectorAll('.ev')){ await wait(140); if (!ok()) return; el.classList.add('on'); }
+    await wait(200); if (!ok()) return; $q('.agw-next').textContent = S0.next; body.querySelector('.agw').classList.add('done');
+  };
+  roles.forEach((b, i) => b.onclick = () => run(i));
+  $q('.agw-re').onclick = () => run(AGENT.scene);
+  $q('.agw-raw').onclick = () => { const x = $q('.agw-evi'); x.classList.remove('flash'); void x.offsetWidth; x.classList.add('flash'); };
+  run(AGENT.scene);
 }
 const ASSET_UI_C = ['#f49ac8', '#b79ae3', '#8cd7ea', '#ffc96b', '#8fdcae'];
 const ASSET_UI = [
@@ -1892,7 +2355,7 @@ const ASSET_UI = [
 function buildUI(body){
   const N = ASSET_UI.length;
   body.innerHTML = `<div class="ux"><div class="ustage"><div class="ustack">${ASSET_UI.map(([f, n], i) => `<div class="ulayer" data-i="${i}" style="--c:${ASSET_UI_C[i]}"><img src="assets/asset/${f}.jpg" alt="${n}"></div>`).reverse().join('')}</div>
-      <span class="note">悬停抬起一层 · 点一下摊开看大图 · 敏感数据已打码</span></div>
+      <span class="note">团队作品 · 悬停抬起一层 · 点一下摊开看大图 · 敏感数据已打码</span></div>
     <div class="side">${ASSET_UI.map(([, n, d], i) => `<div class="it" data-i="${i}" style="--c:${ASSET_UI_C[i]}"><b><i></i>${n}</b><span>${d}</span></div>`).join('')}
       <label class="slider">拆开程度<input type="range" min="0" max="110" value="64"></label></div>
     <div class="ufocus"><div class="st"><img class="m" alt=""><img class="ex2" alt=""></div>
@@ -1933,7 +2396,7 @@ function buildUI(body){
   ASSET_UI.forEach(([f, , , b]) => { if (b){ const im = new Image(); im.src = `assets/asset/${b}.jpg`; } });
 }
 function buildHW(body){
-  body.innerHTML = `<div class="hw"><nav class="plist" aria-label="设备模型"><div class="plh">设备模型 · ${ASSET_HW.length}</div>
+  body.innerHTML = `<div class="hw"><nav class="plist" aria-label="设备模型"><div class="plh">设备模型 · ${ASSET_HW.length} · 团队作品</div>
       ${ASSET_HW.map(([f, n], i) => `<button class="${i ? '' : 'on'}" data-i="${i}"><span class="th" style="background-image:url(assets/asset/${f}.jpg);background-position:center"></span><span class="pn"><b>${n}</b><small>${String(i + 1).padStart(2, '0')}</small></span></button>`).join('')}</nav>
     <div class="hstage"><img alt=""><div class="hcap"></div></div></div>`;
   const st = body.querySelector('.hstage'), img = st.querySelector('img'), cap = st.querySelector('.hcap'), btns = [...body.querySelectorAll('.plist button')];
@@ -1945,35 +2408,327 @@ function buildHW(body){
   set(0);
   gsap.from(btns, { x:-16, opacity:0, duration:.35, stagger:.04, ease:'power2.out' });
 }
+/* v19 平台入口：把真实登录页实时嵌进来（对方没有禁止嵌入），动效是真的。
+   只展示：盖一层透明罩不让点、sandbox 不给表单和弹窗权限；要登录就点按钮去原站。加载失败时露出下面的截图条 */
+const LOGIN_URL = 'https://sham.do-sh.top/login';
 function buildEntry(body){
-  body.innerHTML = `<div class="entry"><div class="hd"><img src="assets/asset/mark.png" alt=""><h4>水华资管平台</h4><p>登录运营控制台，查看资产台账、月度使用矩阵与机房态势。</p></div>
-    <div class="strip">${['01', '02', '03', '04'].map(i => `<img src="assets/asset/landing_${i}.jpg" alt="">`).join('')}</div>
-    <div class="login">内网业务系统，需要管理员分配的账号<a class="live" href="https://sham.do-sh.top" target="_blank" rel="noopener">打开登录页 ↗</a></div></div>`;
-  gsap.from(body.querySelectorAll('.strip img'), { y:30, opacity:0, duration:.6, stagger:.07, ease:'back.out(1.4)' });
+  body.innerHTML = `<div class="ef"><div class="ef-head"><img src="assets/asset/mark.png" alt=""><div><h4>水华资管平台 · 登录页</h4><p>真实页面实时嵌入，动效是线上的原样；这里只展示，不能登录</p></div>
+      <a class="live" href="${LOGIN_URL}" target="_blank" rel="noopener">打开登录页 ↗</a></div>
+    <div class="ef-frame"><div class="ef-fb">${['01', '02', '03', '04'].map(i => `<img src="assets/asset/landing_${i}.jpg" alt="">`).join('')}<span>登录页加载中…</span></div>
+      <iframe title="水华资管平台登录页（实时嵌入，仅展示）" src="${LOGIN_URL}" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin" tabindex="-1" aria-hidden="true"></iframe>
+      <div class="ef-shield" title="仅展示 · 点右上角按钮打开原站"></div><span class="ef-live"><i></i>LIVE · 线上原页面</span></div></div>`;
+  const fr = body.querySelector('.ef-frame'), ifr = fr.querySelector('iframe');
+  const fit = () => { const W = fr.clientWidth, H = fr.clientHeight; if (!W) return;
+    // 桌面：整页（约 860 高）都放得下；按宽、高里更紧的那个缩放，iframe 的视口跟着框的比例走（页面是自适应的）
+    const k = W < 700 ? 1 : Math.min(W/1280, H/860), vw = W/k, vh = H/k;
+    ifr.style.width = vw + 'px'; ifr.style.height = vh + 'px'; ifr.style.transform = `scale(${k})`; };
+  fit(); requestAnimationFrame(fit);
+  const ro = new ResizeObserver(fit); ro.observe(fr);
+  ifr.onload = () => { fr.classList.add('ok'); };
+  setTimeout(() => { if (!fr.classList.contains('ok')) fr.classList.add('slow'); }, 8000);
+  gsap.from(fr, { y:24, opacity:0, duration:.6, ease:'back.out(1.3)' });
+}
+
+/* v21 产品结构 = 三级缩放地图（先总览、再放大、按需看细节；层与层之间推镜头，和乐园「总览 → 扭蛋机」是同一个手法）。
+   第一层 全景（C4 的系统上下文）：平台在正中，四周是用它的人和他们要回答的问题，外圈是外部数据，核心下面是当前主线。
+   第二层 业务域（能力地图 + 热力）：七个域按上线程度上色，财务单独发金光；可按岗位筛选；底下是支撑层。
+   第三层 模块：某个域下的模块、谁在用、和哪些域交换数据；财务多一条建设路线。
+   模块和状态来自平台侧栏（AppLayout.vue 的 NAV_GROUPS / LIVE_NAV_PATHS），定位来自 PRODUCT.md；财务规划来自阶段汇报第 9 页 */
+const ZM_ROLES = [['机房', '这台机器在哪、什么状态'], ['商务', '这个项目签了什么、改过哪些'], ['财务', '这份合同应收多少、收到多少、凭证在哪'], ['采购', '合同、订单、到货，来源有据'], ['经营负责人', '只看汇总与趋势，不进明细']];
+const ZM_EXT = [['BMC 硬件管理', '电源、温度、风扇、健康状态', '首批试点'], ['Prometheus 监控', '监控实例、已采集指标、趋势', '规划'], ['财务系统', '核算与凭证；是否对接待确认', '待确认']];
+const ZM_MAIN = ['项目', '合同（可变更）', '服务器认领', '收款结算'];
+const ZM_ST = { ok:['已上线', 'ok', 1], pre:['预览', 'part', .6], todo:['待开发', 'todo', .15], plan:['规划', 'plan', 0] };
+// [域, 颜色, 一句话定位, 模块[名, 说明, 状态, 用到的岗位], 和哪些域交换数据[域, 交换什么], 标签]
+const ZM_DOM = [
+  ['设备', '#b79ae3', '一台机器一个身份：在哪、什么状态、属于谁', [
+    ['资产总览', '资源分布与使用情况，按地域聚合', 'ok', '机房商务经营负责人'], ['资产列表', '台账质量、待处理与状态构成，下钻到单台', 'ok', '机房商务'], ['月度使用', '每台机器每个月的使用矩阵', 'ok', '机房商务'],
+    ['机房俯视图', '机柜排布与健康状态，点机柜看设备', 'ok', '机房'], ['部件管理', '整机与部件身份、装配关系', 'ok', '机房采购']],
+    [['采购', '验收合格的设备入库建档'], ['项目', '服务器被项目认领'], ['机房', '上架位置与维修记录']]],
+  ['采购', '#8cd7ea', '从合同、订单到逐件验收，设备来源有据可查', [
+    ['采购合同', '合同、供应商与履约进度', 'ok', '采购'], ['采购订单', '下单、审批与到货进度', 'ok', '采购'], ['到货验收', '按采购申报逐件核对 SN，验收留版本链', 'ok', '采购机房'],
+    ['售后', '验收异常转售后，可重新采购', 'ok', '采购'], ['供应商档案', '供应商主数据', 'ok', '采购']],
+    [['设备', '合格设备入库，带上采购来源'], ['机房', '到货签收与现场核对']]],
+  ['项目', '#f49ac8', '当前主线：项目 → 合同（可变更）→ 服务器认领', [
+    ['项目数据中心', '项目汇总看板，数字都能下钻到明细', 'ok', '商务财务经营负责人'], ['项目管理', '项目状态、阶段进度与服务器认领', 'ok', '商务'],
+    ['合同管理', '合同可变更，每次变更留记录', 'ok', '商务财务'], ['客户档案', '客户主数据', 'ok', '商务']],
+    [['设备', '认领哪几台服务器'], ['财务与经营', '合同金额 → 开票、收款'], ['内部自研', '调回出租']]],
+  ['财务与经营', '#ffc96b', '这份合同应收多少、收到多少、凭证在哪', [
+    ['开票管理', '开票金额独立记录，和合同对得上', 'ok', '财务商务'], ['收款管理', '到账登记、回单，与合同对账', 'ok', '财务商务'], ['经营收益看板', '预计收入与实际回款对照', 'ok', '财务经营负责人'],
+    ['成本与回收', '设备投入、合同款项与回收，按项目看清', 'plan', '财务经营负责人'], ['财务口径核对', '收入、成本与统计期间按财务确认的口径', 'plan', '财务'], ['客户对账', '应收、实收与回单，按客户对账', 'plan', '财务商务']],
+    [['项目', '合同、计费项与交付'], ['设备', '资产成本'], ['智能', 'Agent 按财务口径汇总']], '下一步重点'],
+  ['机房', '#8fdcae', '现场：上架、来访、损坏维修', [
+    ['机房工作台', '按项目匹配设备，上架与现场任务', 'ok', '机房'], ['来访登记', '访客申请与机房访问协同', 'pre', '机房'], ['损坏维修', '损坏登记，记录回到设备档案', 'ok', '机房'],
+    ['维修看板', '损坏记录集中查看', 'ok', '机房经营负责人'], ['EMC 设备', 'EMC 设备台账', 'todo', '机房']],
+    [['设备', '位置、状态与维修写回档案'], ['采购', '到货签收']]],
+  ['内部自研', '#c9b8ff', '内部研发与自用设备；共享、调回出租走审批', [
+    ['自研', '内部研发用机，共享与调回出租', 'ok', '机房商务'], ['自用', '内部自用设备的使用安排', 'ok', '机房']],
+    [['设备', '占用与释放'], ['项目', '调回出租']]],
+  ['智能', '#7fb2ff', '用一句话查遍各域，回答带来源', [
+    ['水华 Agent', '问数、知识检索、关系追溯、操作提案', 'ok', '机房商务财务采购经营负责人'], ['移动 App', '一个入口：提问、扫码、看待办', 'plan', '机房商务财务采购经营负责人']],
+    [['各业务域', '按提问人的权限只读查询'], ['审批', '操作只生成提案，人确认后进审批']]],
+];
+const ZM_BASE = [['统一资产身份', '资产 ID · 整机 SN · 部件身份；所有动作写回同一条记录'], ['统一口径', '同一台机器、同一份合同、同一笔钱，各处一种说法；汇总都能点到明细'],
+  ['权限', '13 个内置岗位，字段级 / 行级；金额字段按岗位收窄'], ['审批', '写操作走审批引擎，流程可配置'], ['审计日志', '谁在什么时候改了什么']];
+const ZM_FIN_ROAD = [['现在', '开票、收款挂在「项目」下；经营收益看板已上线'], ['下一步', '独立成「财务与经营」：成本与回收、口径核对、客户对账'], ['以后', '和财务确认口径；是否对接财务系统待定']];
+const ZM = { lv:1, dom:-1, role:'' };
+/* v22 核心 = 赛博朋克粒子星球（参考阶段汇报封面那颗「数据核心」的画法，代码原创）：
+   斐波那契球面上 460 个粒子慢慢自转，近处的粒子之间连细线；三圈倾斜轨道各有一颗彗星；光点沿五个岗位的方向飞进来。
+   配色：深紫球心 + 青 → 洋红的粒子 + 洋红 / 青 / 紫三圈轨道，外面一圈粉色光晕，和乐园的粉紫基调接得上。
+   只在第一层可见时画；离开页面自己停 */
+function zmGlobe(cv, visible, dirs){
+  const g = cv.getContext('2d'), N = 460, P = [];
+  for (let i = 0; i < N; i++){ const y = 1 - 2*(i + .5)/N, a = i*2.3999632297, r = Math.sqrt(1 - y*y); P.push([Math.cos(a)*r, y, Math.sin(a)*r]); }
+  let t = 0, last = 0, W = 0, raf = 0;
+  const RING = [[.38, .25, '#ff5ccf'], [.9, -.55, '#9fd8ff'], [-.6, 1.25, '#b98cff']];
+  const lerpC = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v)*k));
+  const CY = [150, 205, 255], MG = [255, 92, 207];
+  function draw(){
+    const dpr = Math.min(devicePixelRatio || 1, 2), w = cv.clientWidth;
+    if (!w) return; if (w !== W){ W = w; cv.width = cv.height = Math.round(w*dpr); }
+    const S = cv.width, c = S/2, R = S*0.33, fov = S*1.3;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, S, S);
+    const halo = g.createRadialGradient(c, c, R*0.2, c, c, S*0.5);
+    halo.addColorStop(0, 'rgba(170,80,255,.2)'); halo.addColorStop(.45, 'rgba(110,40,150,.16)'); halo.addColorStop(.62, 'rgba(159,216,255,.08)'); halo.addColorStop(.8, 'rgba(255,63,210,.07)'); halo.addColorStop(1, 'rgba(255,63,210,0)');
+    g.fillStyle = halo; g.fillRect(0, 0, S, S);
+    const proj = (x, y, z) => { const k = fov/(fov - z); return [c + x*k, c + y*k, k, z]; };
+    // 赤道上的一圈经纬网（细、淡），让球体更有「全息投影」的结构感
+    g.lineWidth = Math.max(.5, S/1000); g.strokeStyle = 'rgba(159,216,255,.16)';
+    for (const lat of [-.5, 0, .5]){ g.beginPath(); for (let j = 0; j <= 96; j++){ const q = j/96*Math.PI*2, rr = Math.sqrt(1 - lat*lat)*R; const X = Math.cos(q + t*.12)*rr, Z = Math.sin(q + t*.12)*rr, Y = lat*R;
+        const Y2 = Y*Math.cos(.35) - Z*Math.sin(.35), Z2 = Y*Math.sin(.35) + Z*Math.cos(.35), p = proj(X, Y2, Z2); j ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke(); }
+    const a = t*.12, ca = Math.cos(a), sa = Math.sin(a), tl = .35, ct = Math.cos(tl), st = Math.sin(tl);
+    const ps = P.map(([x, y, z]) => { const X = x*ca + z*sa, Z = z*ca - x*sa, Y = y*ct - Z*st, Z2 = y*st + Z*ct; return proj(X*R, Y*R, Z2*R).concat([y]); });
+    g.lineWidth = Math.max(.6, S/700); g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < ps.length; i++){ const p = ps[i]; if (p[3] < -R*.2) continue;
+      for (let j = i + 1; j < Math.min(i + 19, ps.length); j++){ const q = ps[j], d = Math.hypot(p[0] - q[0], p[1] - q[1]);
+        if (d < R*.19 && q[3] > -R*.2){ g.strokeStyle = `rgba(170,130,255,${(.38*(1 - d/(R*.19))).toFixed(3)})`; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); } } }
+    ps.sort((A, B) => A[3] - B[3]);
+    for (const p of ps){ const front = (p[3] + R)/(2*R), col = lerpC(CY, MG, (p[4] + 1)/2);
+      g.fillStyle = `rgba(${col},${(.28 + front*.72).toFixed(3)})`; g.beginPath(); g.arc(p[0], p[1], (1.1 + front*1.9)*p[2]*S/600, 0, 7); g.fill();
+      if (front > .8){ g.fillStyle = `rgba(${col},.18)`; g.beginPath(); g.arc(p[0], p[1], 4.2*p[2]*S/600, 0, 7); g.fill(); } }
+    g.globalCompositeOperation = 'source-over';
+    RING.forEach(([tilt, rot, col], k) => {
+      const r = R*(1.17 + k*.045), ring = q => { const x = Math.cos(q)*r, y = Math.sin(q)*r*Math.sin(tilt), z = Math.sin(q)*r*Math.cos(tilt);
+        return proj(x*Math.cos(rot) - y*Math.sin(rot), x*Math.sin(rot) + y*Math.cos(rot), z); };
+      g.lineWidth = Math.max(.9, S/520); g.strokeStyle = col + '99'; g.beginPath();
+      for (let j = 0; j <= 160; j++){ const p = ring(j/160*Math.PI*2); j ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke();
+      for (let j = 0; j < 34; j++){ const p = ring(t*(.32 + k*.07) + k*2 - j*.013); g.globalAlpha = (1 - j/34)*.95; g.fillStyle = j ? col : '#fff';
+        g.beginPath(); g.arc(p[0], p[1], (j ? 1.2 : 3)*S/600, 0, 7); g.fill(); if (!j){ g.shadowColor = col; g.shadowBlur = 16*S/600; g.fill(); g.shadowBlur = 0; } }
+      g.globalAlpha = 1; });
+    dirs.forEach((ang, k) => { const prog = (t*.22 + k*.21)%1, r0 = S*.5, r = r0 - prog*(r0 - R*1.05);
+      const x = c + Math.cos(ang)*r, y = c + Math.sin(ang)*r, col = k % 2 ? '#9fd8ff' : '#ff5ccf';
+      const tail = g.createLinearGradient(c + Math.cos(ang)*(r + S*.06), c + Math.sin(ang)*(r + S*.06), x, y); tail.addColorStop(0, col + '00'); tail.addColorStop(1, col + 'cc');
+      g.strokeStyle = tail; g.lineWidth = 1.6*S/600; g.beginPath(); g.moveTo(c + Math.cos(ang)*(r + S*.06), c + Math.sin(ang)*(r + S*.06)); g.lineTo(x, y); g.stroke();
+      g.fillStyle = '#fff'; g.shadowColor = col; g.shadowBlur = 12*S/600; g.beginPath(); g.arc(x, y, 2.2*S/600, 0, 7); g.fill(); g.shadowBlur = 0; });
+  }
+  function loop(now){
+    raf = 0; if (!cv.isConnected) return;
+    const dt = Math.min(.05, ((now - (last || now))/1000)); last = now;
+    if (visible()){ if (!REDUCED) t += dt; draw(); }
+    raf = requestAnimationFrame(loop);
+  }
+  draw(); raf = requestAnimationFrame(loop);
+}
+/* v25 产品结构的「深空」：写实星场为主，粉紫只做点缀（公主 × 科技）
+   - 星色按恒星温度：大多是白、冰蓝白、淡暖白，少量橙；另有约 1/10 偏粉紫（点缀）
+   - 星等：大量极暗的小星 + 少量亮星；亮星带细长的十字星芒（镜头衍射），闪烁很轻
+   - 银河带：一条斜穿画面的密集暗星 + 淡淡的光雾，中间压一道暗尘带（窗口尺寸变化时才重画）
+   - 流动层：星点从星球方向极慢地朝镜头飘来（透视），越近越亮；切换层级时加速成光线拖尾（跃迁）
+   - 鼠标视差；偶尔一颗流星；只在这一页看得见时画；减少动态效果时只画静止的一帧 */
+function zmSpace(cv, host, focus){
+  const g = cv.getContext('2d');
+  const COLS = [[255,255,255], [214,228,255], [178,200,255], [255,244,226], [255,214,170], [255,176,226], [206,176,255]];
+  const WEIGHT = [6, 5, 2, 3, 1, 1, 1];
+  const pickC = () => { let r = Math.random()*WEIGHT.reduce((a, b) => a + b), i = 0; while ((r -= WEIGHT[i]) > 0) i++; return COLS[i]; };
+  // 星点贴图：很小的白芯 + 窄光晕（写实星点，不是光斑）
+  const SPR = new Map(); COLS.forEach(col => { const s = 32, c = document.createElement('canvas'); c.width = c.height = s; const x = c.getContext('2d'), m = s/2, k = col.join(',');
+    const gr = x.createRadialGradient(m, m, 0, m, m, m); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.1, `rgba(${k},.95)`); gr.addColorStop(.25, `rgba(${k},.28)`); gr.addColorStop(.6, `rgba(${k},.05)`); gr.addColorStop(1, `rgba(${k},0)`);
+    x.fillStyle = gr; x.fillRect(0, 0, s, s); SPR.set(col, c); });
+  const mag = () => Math.pow(Math.random(), 3.2);           // 0 很暗 … 1 很亮（亮星少）
+  const STARS = [];
+  for (let i = 0; i < 300; i++){ const m = mag(); STARS.push({ x:Math.random(), y:Math.random(), m, c:pickC(), ph:Math.random()*7, sp:.4 + Math.random()*1.2 }); }
+  const resetF = (p, far) => { const a = Math.random()*Math.PI*2, d = Math.pow(Math.random(), .6);
+    p.x = Math.cos(a)*d*1.4; p.y = Math.sin(a)*d*.9; p.z = far ? 6 + Math.random()*2 : .4 + Math.random()*7.6; p.c = pickC(); p.m = mag(); p.ph = Math.random()*7; p.tw = .5 + Math.random()*1.5; return p; };
+  const FLOW = []; for (let i = 0; i < 140; i++) FLOW.push(resetF({}, false));
+  // 很淡的星云：冷紫、深蓝，各一团；只留一丝粉
+  const NEB = [[120,90,255,.09,.28,.3,.55], [60,90,200,.08,.75,.7,.6], [255,110,200,.05,.62,.12,.4]];
+  let W = 0, H = 0, dpr = 1, t = 0, last = 0, kickV = 0, mx = 0, my = 0, tmx = 0, tmy = 0, meteor = null, nextMeteor = 4, band = null;
+  host.addEventListener('pointermove', e => { const r = host.getBoundingClientRect(); tmx = (e.clientX - r.left)/r.width - .5; tmy = (e.clientY - r.top)/r.height - .5; }, { passive:true });
+  host.addEventListener('pointerleave', () => { tmx = tmy = 0; });
+  // 银河带：一张离屏图（比画面大一圈，留出视差余量）
+  function makeBand(){
+    const bw = Math.round(W*1.1*dpr), bh = Math.round(H*1.1*dpr), c = document.createElement('canvas'); c.width = bw; c.height = bh; const x = c.getContext('2d');
+    x.translate(bw/2, bh/2); x.rotate(-.42); const L = Math.hypot(bw, bh), T = Math.min(bw, bh)*.2;
+    const glow = x.createLinearGradient(0, -T*1.6, 0, T*1.6);
+    glow.addColorStop(0, 'rgba(150,130,255,0)'); glow.addColorStop(.35, 'rgba(170,150,255,.1)'); glow.addColorStop(.5, 'rgba(235,215,255,.17)'); glow.addColorStop(.65, 'rgba(255,170,220,.08)'); glow.addColorStop(1, 'rgba(150,130,255,0)');
+    x.fillStyle = glow; x.fillRect(-L/2, -T*1.6, L, T*3.2);
+    const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5)/1.5;
+    for (let i = 0; i < 2000; i++){ const px = (Math.random() - .5)*L, py = gauss()*T*1.1, a = .18 + Math.random()*.45, r = (.35 + Math.random()*.7)*dpr;
+      const col = pickC(); x.fillStyle = `rgba(${col},${a.toFixed(2)})`; x.fillRect(px, py, r, r); }
+    // 暗尘带：沿中线压暗一道，边缘起伏
+    x.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 70; i++){ const px = (i/70 - .5)*L, py = Math.sin(i*.37)*T*.18 + T*.05, r = T*(.18 + Math.random()*.22);
+      const gr = x.createRadialGradient(px, py, 0, px, py, r); gr.addColorStop(0, 'rgba(0,0,0,.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gr; x.fillRect(px - r, py - r, r*2, r*2); }
+    return c;
+  }
+  function size(){ const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return false;
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
+    if (w !== W || h !== H){ W = w; H = h; cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); band = makeBand(); }
+    return true; }
+  let VX = 0, VY = 0;
+  function vp(dt){ const f = focus(), r = host.getBoundingClientRect();   // 消失点 = 星球中心（换层级时平滑移到画面中间）
+    const tx = f && f.width ? f.left + f.width/2 - r.left : W*.4, ty = f && f.width ? f.top + f.height/2 - r.top : H*.5;
+    if (!VX || !dt){ VX = tx; VY = ty; } else { const k = Math.min(1, dt*2.5); VX += (tx - VX)*k; VY += (ty - VY)*k; } return [VX, VY]; }
+  // 亮星的十字星芒：细、长、两头渐隐
+  function spikes(x, y, len, col, a){
+    g.globalAlpha = a; g.lineWidth = .8;
+    for (const [dx, dy] of [[1, 0], [0, 1]]){ const gr = g.createLinearGradient(x - dx*len, y - dy*len, x + dx*len, y + dy*len);
+      gr.addColorStop(0, `rgba(${col},0)`); gr.addColorStop(.5, `rgba(${col},.9)`); gr.addColorStop(1, `rgba(${col},0)`);
+      g.strokeStyle = gr; g.beginPath(); g.moveTo(x - dx*len, y - dy*len); g.lineTo(x + dx*len, y + dy*len); g.stroke(); }
+  }
+  function draw(dt){
+    if (!size()) return;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    mx += (tmx - mx)*Math.min(1, dt*3); my += (tmy - my)*Math.min(1, dt*3);
+    const [cx, cy] = vp(dt), D = Math.max(W, H);
+    g.globalCompositeOperation = 'lighter';
+    NEB.forEach(([r0, g0, b0, al, nx, ny, nr], i) => { const x = (nx + Math.sin(t*.03 + i*2)*.03 - mx*.015)*W, y = (ny + Math.cos(t*.025 + i)*.03 - my*.015)*H, r = nr*D;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${r0},${g0},${b0},${al})`); gr.addColorStop(1, `rgba(${r0},${g0},${b0},0)`); g.fillStyle = gr; g.fillRect(0, 0, W, H); });
+    if (band){ g.globalAlpha = 1; g.drawImage(band, -W*.05 - mx*4, -H*.05 - my*4, W*1.1, H*1.1); }
+    // 远景恒星：几乎不动、闪得很轻；亮星带短星芒
+    STARS.forEach(s => { const tw = .82 + .18*Math.sin(t*s.sp + s.ph), x = s.x*W - mx*5, y = s.y*H - my*5, r = 1.3 + s.m*4.5, a = (.38 + s.m*.62)*tw;
+      g.globalAlpha = a; g.drawImage(SPR.get(s.c), x - r, y - r, r*2, r*2);
+      if (s.m > .55) spikes(x, y, 4 + s.m*14*tw, s.c, a*.55); });
+    // 流动层
+    const v = (1 + kickV)*dt*.35; kickV *= Math.pow(.12, dt);
+    const F = D*.42;
+    FLOW.forEach(p => {
+      const z0 = p.z; p.z -= v;
+      if (p.z < .25) resetF(p, true); else if (p.z > 8.5) { resetF(p, false); p.z = .4 + Math.random()*.6; }
+      const k = F/p.z, par = 24/p.z, x = cx + p.x*k*.5 - mx*par, y = cy + p.y*k*.5 - my*par;
+      if (x < -60 || x > W + 60 || y < -60 || y > H + 60){ resetF(p, true); return; }
+      const near = 1 - Math.min(1, (p.z - .25)/6), tw = .8 + .2*Math.sin(t*p.tw + p.ph);
+      const b = Math.min(1, p.m*.7 + near*.55), r = 1.1 + b*4.2;
+      const fade = Math.min(1, (8 - p.z)/1.5, (p.z - .25)/.35), a = Math.max(0, fade*(.25 + b*.75)*tw);
+      if (Math.abs(kickV) > .3){ const k0 = F/Math.max(.25, z0), px = cx + p.x*k0*.5 - mx*24/z0, py = cy + p.y*k0*.5 - my*24/z0;
+        g.globalAlpha = a*.8; g.strokeStyle = `rgba(${p.c},1)`; g.lineWidth = .6 + b*.8; g.beginPath(); g.moveTo(px, py); g.lineTo(x, y); g.stroke(); }
+      g.globalAlpha = a; g.drawImage(SPR.get(p.c), x - r, y - r, r*2, r*2);
+      if (b > .62) spikes(x, y, 5 + (b - .62)*40*tw, p.c, a*.6);
+    });
+    // 偶尔一颗流星（白里带一点冰蓝）
+    if (!REDUCED && (nextMeteor -= dt) < 0 && !meteor){ nextMeteor = 6 + Math.random()*7; const L = Math.random() < .5;
+      meteor = { x:(L ? .05 : .55 + Math.random()*.35)*W, y:Math.random()*.35*H, vx:(L ? 1 : -1)*(320 + Math.random()*160), vy:110 + Math.random()*70, life:1 }; }
+    if (meteor){ const m = meteor; m.x += m.vx*dt; m.y += m.vy*dt; m.life -= dt*1.1;
+      const tl = .14, gr = g.createLinearGradient(m.x - m.vx*tl, m.y - m.vy*tl, m.x, m.y); gr.addColorStop(0, 'rgba(180,200,255,0)'); gr.addColorStop(1, `rgba(240,245,255,${(.85*m.life).toFixed(2)})`);
+      g.globalAlpha = 1; g.strokeStyle = gr; g.lineWidth = 1.1; g.beginPath(); g.moveTo(m.x - m.vx*tl, m.y - m.vy*tl); g.lineTo(m.x, m.y); g.stroke();
+      g.drawImage(SPR.get(COLS[0]), m.x - 4, m.y - 4, 8, 8); if (m.life <= 0) meteor = null; }
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  }
+  function loop(now){
+    if (!cv.isConnected) return;
+    const dt = Math.min(.05, (now - (last || now))/1000); last = now;
+    if (!document.hidden && cv.offsetParent !== null){ if (!REDUCED) t += dt; draw(REDUCED ? 0 : dt); }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(() => { draw(0); requestAnimationFrame(loop); });
+  return { kick(inward){ if (!REDUCED) kickV = inward ? 14 : -8; } };
 }
 function buildLayers(body){
-  const layers = [
-    ['部件层','GPU / CPU / 内存 / 硬盘 / 网卡 · 部件 ID · 厂商 SN','#f7d6ea'],
-    ['资产明细列表','下钻到单台设备，查询 / 筛选 / 详情流转','#e8dcfa'],
-    ['角色视图 × 12','同一套数据，按岗位定义默认字段与盘面','#d9eefa'],
-    ['盘面','对账补录 · 台账质量 · 缺口清单 · 待处理','#fff0c9'],
-    ['统一口径','业务定义 → 字段 → API → 盘面 → Agent','#dff3dd'],
-  ];
-  body.innerHTML = `<div class="ex"><div class="stage"><div class="stack">${layers.map((l,i)=>`<div class="layer" data-i="${i}" style="background:linear-gradient(135deg,${l[2]},#fff)"><div class="grid"></div></div>`).join('')}</div>
-    <span class="note">爆炸图：悬停层级或右侧条目高亮；不展示任何具体资产数据。</span></div>
-    <div class="side">${layers.slice().reverse().map((l)=>`<div class="it" data-i="${layers.indexOf(l)}"><b>${l[0]}</b><span>${l[1]}</span></div>`).join('')}
-    <label class="slider">拆开程度<input type="range" min="0" max="100" value="70"></label></div></div>`;
-  const els = [...body.querySelectorAll('.layer')], items = [...body.querySelectorAll('.it')];
-  let gap = 70, hot = -1;
-  const place = () => els.forEach((e,i)=>{ e.style.transform = `translateZ(${i*gap + (i===hot ? 26 : 0)}px)`; e.classList.toggle('hot', i===hot); });
-  const setHot = i => { hot = i; place(); items.forEach(it=>it.classList.toggle('hot', +it.dataset.i===i)); };
-  els.forEach(e=>{ e.onmouseenter=()=>setHot(+e.dataset.i); e.onmouseleave=()=>setHot(-1); });
-  items.forEach(it=>{ it.onmouseenter=()=>setHot(+it.dataset.i); it.onmouseleave=()=>setHot(-1); });
-  body.querySelector('input').oninput = e => { gap = +e.target.value; place(); };
-  // 入场：先叠成一摞，再一层层弹开
-  const o = { g:0 }; els.forEach(e=>e.style.transition='none');
-  gsap.to(o,{ g:70, duration:1.1, ease:'elastic.out(1,.55)', delay:.15, onUpdate(){ gap = o.g; place(); }, onComplete(){ els.forEach(e=>e.style.transition=''); } });
-  gsap.from(els,{ opacity:0, y:-40, stagger:.08, duration:.35 });
+  ZM.lv = 1; ZM.dom = -1; ZM.role = '';
+  body.innerHTML = `<div class="zm"><canvas class="zm-space" aria-hidden="true"></canvas><div class="zm-bar"><nav class="zm-crumb"></nav><span class="zm-hint"></span><div class="zm-roles"></div></div>
+    <div class="zm-stage"><div class="zl zl1"></div><div class="zl zl2"></div><div class="zl zl3"></div></div>
+    <aside class="zm-side"><div class="as-k"></div><h5></h5><p class="as-d"></p><div class="as-x"></div>
+      <div class="as-lg"><span><i class="ok"></i>已上线</span><span><i class="part"></i>预览</span><span><i class="todo"></i>待开发</span><span><i class="plan"></i>规划</span></div>
+      <p class="as-note">模块与状态来自平台当前的侧栏 · 平台为四人团队共同建设</p></aside></div>`;
+  const $ = q => body.querySelector(q), stage = $('.zm-stage'), L = [null, $('.zl1'), $('.zl2'), $('.zl3')];
+  const space = zmSpace($('.zm-space'), $('.zm'), () => (ZM.lv === 1 ? L[1].querySelector('.zc') : null)?.getBoundingClientRect());
+  const side = { k:$('.as-k'), h:$('.zm-side h5'), d:$('.as-d'), x:$('.as-x') };
+  let ctx = ['', '', '', ''];
+  const setSide = (k, h, d, x = '') => { side.k.textContent = k; side.h.textContent = h; side.d.textContent = d; side.x.innerHTML = x; };
+  const resetSide = () => setSide(...ctx);
+  // ---- 第一层：全景
+  const RP = [[50, 10], [14, 30], [86, 30], [86, 68], [14, 68]];   // 经营负责人、机房、商务、财务、采购 的位置（%）
+  const RO = [4, 0, 1, 2, 3];
+  L[1].innerHTML = `<svg class="zm-lines" viewBox="0 0 100 100" preserveAspectRatio="none">${RO.map((r, i) => `<line x1="${RP[i][0]}" y1="${RP[i][1]}" x2="50" y2="46"/>`).join('')}
+      ${[20, 50, 80].map(x => `<line class="ext" x1="${x}" y1="92" x2="50" y2="46"/>`).join('')}</svg>
+    ${RO.map((r, i) => `<div class="zr${ZM_ROLES[r][0] === '财务' ? ' fin' : ''}" style="left:${RP[i][0]}%;top:${RP[i][1]}%" data-r="${ZM_ROLES[r][0]}"><code>U-0${r + 1}</code><b>${ZM_ROLES[r][0]}</b><span>${ZM_ROLES[r][1]}</span></div>`).join('')}
+    <button class="zc" aria-label="推进到业务域"><canvas class="zc-cv"></canvas><span class="zc-t"><img src="assets/asset/mark.png" alt=""><b>水华资管平台</b><small>算力资产全生命周期</small><em>点我推进 ›</em></span><i></i></button>
+    <div class="zmain">${ZM_MAIN.map(x => `<b>${x}</b>`).join('<i>→</i>')}<u></u><small>当前主线</small></div>
+    ${ZM_EXT.map(([n, d, t], i) => `<div class="zx" style="left:${[20, 50, 80][i]}%" data-d="${d}" data-t="${t}"><b>${n}</b><em>${t}</em></div>`).join('')}`;
+  L[1].querySelector('.zc').onclick = e => go(2, e.currentTarget);
+  // 粒子星球：光点从五个岗位的方向飞进核心（角度按各自在全景里的位置算）
+  zmGlobe(L[1].querySelector('.zc-cv'), () => L[1].classList.contains('on'), RP.map(([x, y]) => Math.atan2((y - 46)*0.62, x - 50)));
+  L[1].querySelectorAll('.zr').forEach(el => { el.onmouseenter = () => setSide('使用的人', el.dataset.r, el.querySelector('span').textContent, `点核心推进去，可以按「${el.dataset.r}」筛出他用到的模块`); el.onmouseleave = resetSide;
+    el.onclick = () => { ZM.role = el.dataset.r; go(2, el); }; });
+  L[1].querySelectorAll('.zx').forEach(el => { el.onmouseenter = () => setSide('外部数据', el.querySelector('b').textContent, el.dataset.d, `状态：${el.dataset.t}`); el.onmouseleave = resetSide; });
+  // ---- 第二层：业务域
+  const stat = list => { const c = { ok:0, pre:0, todo:0, plan:0 }; list.forEach(m => c[m[2]]++); return c; };
+  const build2 = () => {
+    L[2].innerHTML = `<div class="zd-grid">${ZM_DOM.map(([n, col, pur, mods, , tag], i) => { const c = stat(mods), tot = mods.length;
+        return `<button class="zd${tag ? ' fin' : ''}" data-i="${i}" style="--dc:${col}"><code class="zd-code">D-0${i + 1}</code><h6>${n}${tag ? `<em>${tag}</em>` : ''}</h6><p>${pur}</p>
+          <div class="zd-seg">${mods.map(m => `<i class="s-${ZM_ST[m[2]][1]}"></i>`).join('')}</div>
+          <div class="zd-mods">${mods.map(([m, , k, who]) => `<span class="${ZM_ST[k][1]}" data-who="${who}">${m}</span>`).join('')}</div>
+          <small><b>ONLINE ${String(c.ok).padStart(2, '0')}/${String(tot).padStart(2, '0')}</b>${c.plan ? ` · 规划 ${c.plan}` : ''}${c.pre ? ` · 预览 ${c.pre}` : ''}${c.todo ? ` · 待开发 ${c.todo}` : ''}</small><i class="zd-corner"></i></button>`; }).join('')}</div>
+      <div class="zd-base"><span>CORE · 支撑层</span>${ZM_BASE.map(([n, d]) => `<b data-d="${d}">${n}</b>`).join('')}<b class="plan" data-d="BMC 硬件状态与 Prometheus 监控，首批试点">运行数据</b></div>`;
+    L[2].querySelectorAll('.zd').forEach(el => { const D = ZM_DOM[+el.dataset.i];
+      el.onmouseenter = () => setSide('业务域', D[0], D[2], `${D[3].length} 个模块 · 点一下推进去看`); el.onmouseleave = resetSide; el.onclick = () => go(3, el, +el.dataset.i); });
+    L[2].querySelectorAll('.zd-base b').forEach(el => { el.onmouseenter = () => setSide('支撑层', el.textContent, el.dataset.d); el.onmouseleave = resetSide; });
+    applyRole();
+  };
+  // ---- 第三层：某个域
+  const build3 = i => {
+    const [n, col, pur, mods, links, tag] = ZM_DOM[i];
+    L[3].innerHTML = `<div class="zm3" style="--dc:${col}"><header><code>D-0${i + 1} · DOMAIN</code><h4>${n}${tag ? `<em>${tag}</em>` : ''}</h4><p>${pur}</p></header>
+      <div class="zm3-body"><div class="zm3-mods">${mods.map(([m, d, k, who], j) => `<div class="zm3-m ${ZM_ST[k][1]}" data-who="${who}"><code>M-${String(i + 1).padStart(2, '0')}.${j + 1}</code><b>${m}<em>${ZM_ST[k][0]}</em></b><p>${d}</p>
+          <div class="who">${ZM_ROLES.map(([r]) => r).filter(r => who.includes(r)).map(r => `<i>${r}</i>`).join('')}</div></div>`).join('')}</div>
+        <aside class="zm3-side"><h6>和哪些域交换数据</h6>${links.map(([d, w]) => `<div class="lk"><b>${d}</b><span>${w}</span></div>`).join('')}
+          ${tag ? `<h6>建设路线</h6><ol class="road">${ZM_FIN_ROAD.map(([a, b], j) => `<li class="r${j}"><b>${a}</b><span>${b}</span></li>`).join('')}</ol>` : ''}</aside></div></div>`;
+    L[3].querySelectorAll('.zm3-m').forEach(el => { el.onmouseenter = () => setSide(n, el.querySelector('b').firstChild.textContent, el.querySelector('p').textContent, `状态：${el.querySelector('em').textContent}`); el.onmouseleave = resetSide; });
+    applyRole();
+  };
+  // ---- 岗位筛选（第二、三层）
+  const roleBar = $('.zm-roles');
+  roleBar.innerHTML = `<button data-r="">全部岗位</button>${ZM_ROLES.map(([r]) => `<button data-r="${r}">${r}</button>`).join('')}`;
+  function applyRole(){
+    roleBar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.r === ZM.role));
+    body.querySelectorAll('[data-who]').forEach(el => el.classList.toggle('dim', !!ZM.role && !el.dataset.who.includes(ZM.role)));
+    body.querySelectorAll('.zd').forEach(el => el.classList.toggle('dim', !!ZM.role && !el.querySelector('[data-who]:not(.dim)')));
+  }
+  roleBar.querySelectorAll('button').forEach(b => b.onclick = () => { ZM.role = b.dataset.r; applyRole(); });
+  // ---- 面包屑 + 推镜头
+  const crumb = $('.zm-crumb'), hint = $('.zm-hint');
+  function chrome(){
+    const parts = [['全景', 1], ['业务域', 2]]; if (ZM.lv === 3) parts.push([ZM_DOM[ZM.dom][0], 3]);
+    crumb.innerHTML = (ZM.lv > 1 ? `<button class="back" aria-label="退回上一层">‹</button>` : '') + parts.slice(0, ZM.lv).map(([t, l], j) => `<button data-l="${l}" class="${l === ZM.lv ? 'on' : ''}">${t}</button>`).join('<i>›</i>');
+    crumb.querySelectorAll('button[data-l]').forEach(b => b.onclick = () => { if (+b.dataset.l < ZM.lv) go(+b.dataset.l); });
+    crumb.querySelector('.back')?.addEventListener('click', () => go(ZM.lv - 1));
+    hint.textContent = ['', '点中间的核心推进去 · 点一个人直接按他的岗位看', '点一个业务域推进去 · 上方可以按岗位筛选', '点左上角退回 · 悬停模块看说明'][ZM.lv];
+    roleBar.style.display = ZM.lv === 1 ? 'none' : '';
+    ctx = [['', '全景', '平台在正中，四周是用它的人和他们要回答的问题；外圈虚线是外部数据。同一批数据，回答所有人的问题。'],
+      ['', '业务域', '七个业务域，颜色条是上线程度：绿 = 已上线，黄 = 预览，灰 = 待开发，虚线 = 规划。财务正在从「项目」里独立出来。'],
+      ['', '', '', ''], ['', '', '']][ZM.lv - 1];
+    if (ZM.lv === 1) ctx = ['产品结构 · 全景', '同一批数据，回答所有人', ctx[2]];
+    if (ZM.lv === 2) ctx = ['产品结构 · 业务域', '七个业务域 + 支撑层', ctx[2]];
+    if (ZM.lv === 3){ const D = ZM_DOM[ZM.dom]; ctx = [`业务域 · ${D[0]}`, D[0], D[2], `${D[3].length} 个模块，和 ${D[4].length} 个域交换数据`]; }
+    resetSide();
+  }
+  function go(lv, fromEl, dom){
+    if (lv === ZM.lv && dom == null) return;
+    const cur = L[ZM.lv], nx = L[lv], inward = lv > ZM.lv;
+    if (lv === 2) build2(); if (lv === 3) { ZM.dom = dom ?? ZM.dom; build3(ZM.dom); }
+    const r = stage.getBoundingClientRect(), f = fromEl?.getBoundingClientRect?.();
+    const o = f ? `${((f.left + f.width/2 - r.left)/r.width*100).toFixed(1)}% ${((f.top + f.height/2 - r.top)/r.height*100).toFixed(1)}%` : '50% 50%';
+    cur.style.transformOrigin = nx.style.transformOrigin = o;
+    ZM.lv = lv; chrome();
+    L.forEach(x => x && x.classList.toggle('on', x === nx));
+    gsap.killTweensOf([cur, nx]);
+    gsap.to(cur, { scale:inward ? 2.6 : .4, opacity:0, filter:'blur(6px)', duration:REDUCED ? 0 : .5, ease:'power2.in' });
+    gsap.fromTo(nx, { scale:inward ? .4 : 2.6, opacity:0, filter:'blur(6px)' }, { scale:1, opacity:1, filter:'blur(0px)', duration:REDUCED ? 0 : .65, delay:REDUCED ? 0 : .2, ease:'power3.out' });
+    SFX.play('whoosh', { gain:0.18, rate:inward ? 1.2 : 0.85 });
+    space.kick(inward);
+  }
+  L.forEach(x => x && gsap.set(x, { opacity:0 }));
+  L[1].classList.add('on'); gsap.fromTo(L[1], { scale:.9, opacity:0 }, { scale:1, opacity:1, duration:.6, ease:'back.out(1.4)' });
+  chrome();
 }
 
 function buildResearch(body){
@@ -2051,31 +2806,38 @@ function buildToy(k){
 
 /* 资管的摆件 = 一台小机柜：从下往上是资产的生命周期，最上面一层是还没做的下一步。
    亮灯的是主要做的，半透明的是协作的，虚线的是规划中（只用样子区分，文字不逐层强调归属）。点抽屉 → 展开到「我做了什么」那一段 */
-const ASSET_RACK = [   // [类型, 名字, 这一层说明, 对应「我做了什么」里的第几个案例（'next' = 下一步）]
-  ['plan', '手机 App · Agent', '规划中：手机扫码验收、移动审批、Agent 发起审批单', 'next'],
-  ['co', '合并与发布收口', '多人并行开发时并分支、解迁移撞号、修主干的测试和构建', 2],
-  ['co', '自研 · 自用接入', '把内部自研 / 自用接进看板和使用安排', -1],
-  ['mine', '项目台账 · 开票', '台账表、合同金额与月租金落库、开票模块、对账', -1],
-  ['mine', '流程图 · 消息中心', '每一单卡在哪一环、每环等了多久；待办集中到一处', 1],
-  ['mine', '资产域 11 个审批点', '采购、调拨、改 SN、换机柜、退役、报修……都只能走审批生效', 1],
-  ['mine', '到货逐件验收', '按采购申报逐件核对 SN，验收留版本链，生效时冻结快照', 0],
+/* v18：机柜 = 一台设备的一生（汇报附录 A01）：从下往上 采购 → 到货验收 → 入库 → 分配 → 使用 → 维修回收，最上面是下一步。
+   只讲产品，不标归属；点抽屉跳到相关的那一段（数字 = 「做了什么」里的案例，字符串 = 标签页，'next' = 下一步） */
+const ASSET_RACK = [   // [类型, 名字, 小字, 这一层说明, 点了去哪]
+  ['plan', '下一步', '规划中', '运行数据、经营分析、Agent 与移动 App', 'next'],
+  ['mine', '维修回收', '工单 · 释放', '工单、外修、释放与回收，记录回到同一份设备档案', 1],
+  ['mine', '使用', '位置 · 责任', '位置、责任与变更都写回同一份档案，可追溯', 'ui'],
+  ['mine', '分配', '按项目匹配', '按项目的机型逐台匹配设备，预留与冲突同屏可见', 'ui'],
+  ['mine', '入库', '编号 · 上架', '正式资产编号、整机与部件身份、压测上架', 'hw'],
+  ['mine', '到货验收', '逐件核对 SN', '到货按采购申报逐件核对，差异当场留痕', 1],
+  ['mine', '采购', '合同 · 订单', '合同、订单与采购审批，单号一路带到验收', 2],
 ];
-const RACK_C = ['', '', '', '#8fdcae', '#8cd7ea', '#b79ae3', '#f49ac8'];
+const RACK_C = ['', '#f6a38f', '#8fdcae', '#8cd7ea', '#ffc96b', '#f49ac8', '#b79ae3'];
 const RACK_BADGE = { mine:'', co:'协作', plan:'规划中' };
-const RACK_LEGEND = `<span><b>资产域 · 小机柜</b>从下往上是资产的一生 · 点抽屉看详情</span>`;
+const RACK_LEGEND = `<span><b>一台设备的一生</b>从下往上：采购 → 维修回收 · 点抽屉看详情</span>`;
 function cabinetHTML(){
-  const dws = ASSET_RACK.map(([kind, n], i) => `<button class="dw ${kind}" data-i="${i}" style="top:${6 + i*51}px;--c:${RACK_C[i] || '#fff'};--d:${(i*0.37).toFixed(2)}s" aria-label="${n}${RACK_BADGE[kind] ? `（${RACK_BADGE[kind]}）` : ''}">
-      <span class="dw-in"><span class="dw-t"></span><span class="dw-f"><i class="led"></i><b>${n}</b>${RACK_BADGE[kind] ? `<em>${RACK_BADGE[kind]}</em>` : ''}<i class="hdl"></i></span></span></button>`).join('');
+  const dws = ASSET_RACK.map(([kind, n, tag], i) => `<button class="dw ${kind}" data-i="${i}" style="top:${6 + i*51}px;--c:${RACK_C[i] || '#fff'};--d:${(i*0.37).toFixed(2)}s" aria-label="${n}：${tag}">
+      <span class="dw-in"><span class="dw-t"></span><span class="dw-f"><i class="led"></i><b>${n}</b><em>${ASSET_RACK[i][2]}</em><i class="hdl"></i></span></span></button>`).join('');
   return `<div class="cab" role="group" aria-label="资产域机柜：每个抽屉是一块工作，点开看详情">
       <div class="cab-sh"></div><img class="cab-img" src="assets/toy/cabinet_body.webp" alt="" draggable="false">
       <div class="cab-sc">${dws}</div>
+      <button class="cab-qr" aria-label="扫一扫：看这台设备的档案（演示）"><i class="qr">${QR_CELLS}</i><span>扫一扫</span></button>
+      <div class="cab-beam"></div>
+      <div class="cab-card" role="dialog" aria-label="设备档案（演示）"><small>扫码 · 设备档案 · 演示数据</small><b>GPU 服务器 · 示例-001</b>
+        <dl><dt>位置</dt><dd>机房 A · 03 柜 · 12U</dd><dt>归属</dt><dd>项目 A · 在租</dd><dt>维修</dt><dd>1 张工单处理中</dd><dt>经历</dt><dd>采购 → 验收 → 入库 → 分配</dd></dl>
+        <span class="cc-x">点一下收起</span></div>
       <div class="cab-cap"><div class="cc-lg">${RACK_LEGEND}</div><div class="cc-d"></div></div>
     </div>`;
 }
 function bindCabinet(cab){
   const cap = cab.querySelector('.cab-cap'), d = cap.querySelector('.cc-d'), dws = [...cab.querySelectorAll('.dw')];
   const show = i => { dws.forEach(el => el.classList.toggle('hot', +el.dataset.i === i)); cap.classList.toggle('on', i >= 0);
-    if (i >= 0){ const [kind, n, t] = ASSET_RACK[i]; d.innerHTML = `<b>${n}${RACK_BADGE[kind] ? `<em class="${kind}">${RACK_BADGE[kind]}</em>` : ''}</b>${t}`; } };
+    if (i >= 0){ const [kind, n, tag, t] = ASSET_RACK[i]; d.innerHTML = `<b>${n}${kind === 'plan' ? `<em class="plan">规划中</em>` : ''}</b>${t}`; } };
   dws.forEach(el => {
     const i = +el.dataset.i;
     el.onmouseenter = () => { if (!TOUCH) { show(i); SFX.play('crank_click', { gain:0.18, rate:1.5 + i*0.06 }); } };
@@ -2086,7 +2848,18 @@ function bindCabinet(cab){
       if (TOUCH && !el.classList.contains('hot')){ show(i); return; }
       expandCard(i); };
   });
+  // 扫码演示：一道扫描光从上扫到下，然后弹出设备档案卡（汇报第 4 页「扫码进入设备现场」，数据是假的）
+  const qr = cab.querySelector('.cab-qr'), card = cab.querySelector('.cab-card');
+  qr.onclick = e => { e.stopPropagation(); if (cab.classList.contains('scan')) return;
+    cab.classList.remove('scanned'); cab.classList.add('scan'); SFX.play('whoosh', { gain:0.25, rate:1.4 });
+    setTimeout(() => { cab.classList.remove('scan'); cab.classList.add('scanned'); SFX.play('bloom_4', { gain:0.3 }); }, 1100); };
+  card.onclick = e => { e.stopPropagation(); cab.classList.remove('scanned'); };
 }
+// 二维码贴纸：示意图案（三个定位角 + 随机格子），不是真的码
+const QR_CELLS = (() => { let h = '', r = 7; for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++){
+  const corner = (x < 3 && y < 3) || (x > 5 && y < 3) || (x < 3 && y > 5);
+  const on = corner ? !(x % 6 === 1 && y % 6 === 1) : ((r = (r*37 + 11) % 101) % 3 === 0);
+  if (on) h += `<b style="grid-area:${y + 1}/${x + 1}"></b>`; } return h; })();
 function fitToy(){
   const inn = toyEl.querySelector('.toy-in'); if (!inn) return;
   // 按屏幕放大缩小：大屏放大到占满约 80% 高度（最多 1.6 倍，不压到底部的图鉴栏），小屏 / iPad 竖屏缩到放得下
@@ -2296,8 +3069,8 @@ function nightTransition(auto){
   gsap.to(o, { t:1, duration:D, ease:'sine.inOut', onUpdate(){ applyNight(o.t); },
     onComplete(){ if (auto){ setHint('月亮亮了 · 再扭一次 ☾', [CLOSE.crank[0], CLOSE.crank[1] - 40]); toast('仲夏夜开园 ✦ 第四颗扭蛋解锁'); } } });
   gsap.to(ovU.uIgnite, { value:1, duration:REDUCED ? .1 : 2.6, delay:D*0.55, ease:'none' });
-  if (SFX.on){ SFX.track('night_ignite', 0.85); SFX.duck(6); }   // 黄昏铺底 → 灯逐盏亮时玻璃音阶往上爬 → 和弦绽开
-  gsap.delayedCall(REDUCED ? .2 : 5.6, () => { if (S.night > 0.5) SFX.setLoop('night_loop'); });   // 灯光秀放完 → 换成欢快的夜场音乐
+  // 黄昏铺底 → 灯逐盏亮时玻璃音阶往上爬 → 和弦绽开 → 一小节过门 → 正好落到夜场循环的第一拍（v16：按音频时钟排好，不再靠计时器）
+  SFX.nightCue();
   gsap.to(ovU.uSearch, { value:1, duration:REDUCED ? .1 : 1.8, delay:D*0.8, ease:'sine.out' });
   if (OV.mode === 'overview' && !REDUCED){
     [[0.95, [700, 150], true], [1.35, [1250, 110], false], [1.7, [380, 210], false]].forEach(([k, p, big]) => gsap.delayedCall(D*k, () => {
@@ -3018,7 +3791,7 @@ mgrOV.onLoad = () => {
   [ovU.uDay, ovU.uDepth, ovU.uBlurT, ovU.uLine].forEach(u => R.initTexture(u.value));
   try { R.compile(ovScene, cam); R.compile(fxScene, cam); } catch (e) {}
   QUAL.hold = performance.now() + 1200;
-  OV.ready = true; canvas.classList.add('ready'); maybeBuild(); computeMatch();
+  OV.ready = true; __boot.ready = true; document.getElementById('bootErr')?.remove(); canvas.classList.add('ready'); maybeBuild(); computeMatch();
   startLate();
 };
 // 晚到的贴图：下载好以后排进 WARM 队列，一张一张传显卡
