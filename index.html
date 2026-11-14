@@ -332,6 +332,76 @@
     background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:var(--shadow);transform:translate(-50%,-100%)}
   img.mini{width:40px;height:40px;object-fit:contain;box-shadow:none;border-radius:0;overflow:visible;filter:drop-shadow(0 3px 5px rgba(150,90,160,.25))}
   .flycap{position:fixed;z-index:12;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(150,90,160,.3))}
+
+  /* v11：海外站扭蛋不弹卡片，换成「摆件 + 说明书」：
+     摆件 = 明信片转架（7 张明信片是 7 个页面的真实截图，可拖动旋转，点一张直达那一页）
+     说明书 = 三折纸条，从蛋里出来是折着的，一折一折打开；纸在夜里也是纸色 */
+  #toy{position:fixed;inset:0;z-index:10;display:grid;place-items:center;pointer-events:none;visibility:hidden;
+    --paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .32 0 0 0 0 .42 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  #toy.on{visibility:visible}
+  .toy-in{display:flex;align-items:center;gap:64px}
+  .toy-in > *{pointer-events:auto}
+  @media (max-aspect-ratio:1/1){ .toy-in{flex-direction:column;gap:0} .rk{margin:30px 30px 44px} }
+
+  .rk{position:relative;width:300px;height:400px;scale:1.2;margin:40px 30px;perspective:1000px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+  .rk.drag{cursor:grabbing}
+  .rk-sc{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(-9deg)}
+  .rk-spin{position:absolute;inset:0;transform-style:preserve-3d}
+  .rk-pole{position:absolute;left:146px;top:62px;width:8px;height:276px;border-radius:4px;background:linear-gradient(90deg,#d9ae62,#fff3d6 42%,#e7c07c 70%,#c99a52)}
+  .rk-ball{position:absolute;left:139px;top:52px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0,#ffe7ad 30%,#d9ae62 80%);box-shadow:0 3px 8px rgba(160,110,60,.35)}
+  .rk-ring{position:absolute;left:24px;width:252px;height:252px;margin-top:-126px;border-radius:50%;border:3px solid #dcae5e;transform:rotateX(90deg);box-shadow:0 0 0 1px rgba(255,248,225,.9),0 0 8px rgba(217,174,98,.5)}
+  .rk-base{position:absolute;left:75px;top:322px;width:150px;height:34px}
+  .rk-base::before,.rk-base::after{content:"";position:absolute;left:0;right:0;height:30px;border-radius:50%}
+  .rk-base::before{top:9px;background:linear-gradient(90deg,#e48bb8,#f7b9d6 45%,#d97aab)}
+  .rk-base::after{top:0;background:radial-gradient(ellipse at 42% 35%,#fff 0,#ffd9ea 38%,#f4a9cc 100%);box-shadow:inset 0 -2px 0 rgba(255,255,255,.6)}
+  .rk-sh{position:absolute;left:52px;top:346px;width:196px;height:30px;border-radius:50%;background:radial-gradient(closest-side,rgba(120,50,110,.32),transparent);filter:blur(3px)}
+  .rk-sign{position:absolute;left:50%;top:4px;transform:translateX(-50%) rotate(-3deg);padding:6px 16px 7px;border-radius:12px;background:#fffaf4 var(--paper);
+    border:1.5px solid #f2b6d3;box-shadow:inset 0 0 0 3px #fffaf4,inset 0 0 0 4px rgba(217,174,98,.55),0 8px 18px -8px rgba(150,70,130,.5);
+    text-align:center;font-size:15px;font-weight:700;letter-spacing:.02em;color:#5b3b62;white-space:nowrap;pointer-events:none}
+  .rk-sign small{display:block;font-size:9px;font-weight:600;letter-spacing:.24em;color:#c2549d;margin-bottom:1px}
+  .rk-tip{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:12px;padding:5px 12px;border-radius:999px;white-space:nowrap;color:var(--ink);
+    background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none}
+  .pc{position:absolute;left:100px;top:92px;width:100px;height:140px;transform-style:preserve-3d;cursor:pointer}
+  .pc-f,.pc-b{position:absolute;inset:0;border-radius:4px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+  .pc-f{background:#fff;padding:5px 5px 19px;box-shadow:0 0 0 1px rgba(232,184,210,.8)}
+  .pc-f img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:2px;pointer-events:none}
+  .pc-f span{position:absolute;left:0;right:0;bottom:4px;z-index:2;text-align:center;font-size:10px;font-weight:600;color:#8a5a86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+  .pc-f::before{content:"";position:absolute;left:0;right:0;bottom:0;height:36%;z-index:1;border-top:1px solid rgba(255,255,255,.95);
+    background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,226,242,.5))}
+  .pc-b{transform:rotateY(180deg);background:#fdf5ee var(--paper);box-shadow:0 0 0 1px rgba(232,184,210,.8)}
+  .pc-b::before{content:"";position:absolute;left:52%;top:42px;right:8px;bottom:22px;background:repeating-linear-gradient(180deg,transparent 0 15px,rgba(200,150,180,.55) 15px 16px)}
+  .pc-b::after{content:"";position:absolute;left:50%;top:12px;bottom:14px;border-left:1px solid rgba(200,150,180,.45)}
+  .pc-b i{position:absolute;right:8px;top:9px;width:20px;height:24px;border:1.5px dashed #ec85c3;border-radius:2px}
+  .pc-b em{position:absolute;left:9px;bottom:8px;font-style:normal;font-size:10px;letter-spacing:.12em;color:#b08aa8}
+  .pc-f::after,.pc-b .shd{content:"";position:absolute;inset:0;z-index:3;background:#5b3b62;opacity:var(--sh,0);pointer-events:none}
+
+  .slip{position:relative;width:340px;height:450px;perspective:1400px}
+  .sl-p{position:absolute;left:0;width:100%;height:150px;transform-style:preserve-3d;transform-origin:50% 0}
+  .sl-a{top:0} .sl-b,.sl-c{top:100%}
+  .sl-f,.sl-k{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+  .sl-f{padding:16px 22px;color:#5b3b62;background:linear-gradient(180deg,rgba(180,110,150,.09),transparent 16px),#fffaf3 var(--paper);
+    box-shadow:0 22px 34px -22px rgba(120,50,110,.45)}
+  .sl-f::after{content:"";position:absolute;inset:0;background:#6a3c66;opacity:var(--fs,0);pointer-events:none}
+  .sl-k{transform:rotateX(180deg);background:#f6e6dc var(--paper)}
+  .sl-a .sl-f{border-radius:8px 8px 0 0;background:#fffaf3 var(--paper)}
+  .sl-b .sl-f,.sl-c .sl-f{border-top:1.5px dashed rgba(214,150,186,.6)}
+  .sl-c .sl-f,.sl-c .sl-k{border-radius:0 0 8px 8px}
+  .sl-top{display:flex;align-items:baseline;gap:10px;font-size:10px;letter-spacing:.22em;color:#a07898}
+  .sl-top b{font-weight:700;color:#c2549d}
+  .slip h2{margin:14px 0 6px;max-width:calc(100% - 62px);font-size:20px;line-height:1.3;letter-spacing:.01em}
+  .sl-role{margin:0;font-size:12.5px;font-weight:600;color:#d0569e}
+  .sl-stamp{position:absolute;right:14px;top:12px;width:72px;height:72px;color:#e2709f;opacity:.78;transform:rotate(-14deg);mix-blend-mode:multiply}
+  .slip.rare .sl-stamp{color:#c99a3a}
+  .sl-h{font-size:10px;letter-spacing:.22em;color:#a07898;margin-bottom:7px}
+  .sl-sum{margin:0;font-size:13px;line-height:1.75}
+  .sl-link{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:#c2549d;text-decoration:none}
+  .sl-link:hover{text-decoration:underline}
+  .sl-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .sl-tags span{font-size:11.5px;padding:3px 10px;border-radius:999px;background:#fff;color:#7a4c78;box-shadow:0 0 0 1px rgba(236,133,195,.45),0 2px 0 rgba(236,133,195,.25);transform:rotate(var(--r,0deg))}
+  .sl-act{display:flex;gap:10px;margin-top:14px}
+  .sl-act .btn{padding:9px 18px;font-size:13.5px}
+  .sl-act .btn.ghost{color:#5b3b62}
+  @media (prefers-reduced-motion:reduce){ .rk-tip{display:none} }
 </style>
 <script>
 // 直接双击 / 在文件预览里打开时（file:// 或 data:），浏览器不允许 WebGL 读本地图片，画面会只剩代码画的玻璃砖。
@@ -374,6 +444,7 @@ if (!/^https?:$/.test(location.protocol)) addEventListener('DOMContentLoaded', (
   </div>
   <div class="detail"><div class="dhead"><h3></h3><button class="x" id="btnBack" title="收起">↙</button></div><div class="dbody"></div></div>
 </div>
+<div id="toy"></div>
 <div id="toast"></div>
 
 <script type="module">
@@ -1527,8 +1598,9 @@ function fillCard(k){
   card.querySelector('#btnExpand').style.display = k===3 ? 'none' : '';
 }
 /* 展开详情 */
-function expandCard(){
+function expandCard(start){
   if (S.mode !== 'card' || curK === 3) return;
+  if (TOY.on) return toyExpand(typeof start === 'number' ? start : 0);
   const p = PROJECTS[curK];
   detail.querySelector('h3').innerHTML = `<small>${p.no}</small>${p.title}`;
   const body = detail.querySelector('.dbody'); body.innerHTML = '';
@@ -1543,6 +1615,7 @@ function expandCard(){
   tl.add(()=>{ cover.style.opacity = 1; });
 }
 function collapseCard(){
+  if (TOY.on) return toyCollapse();
   const cover = card.querySelector('.cover');
   gsap.timeline()
     .to(detail,{ opacity:0, duration:.2 })
@@ -1551,16 +1624,16 @@ function collapseCard(){
     .to(cover,{ opacity:1, duration:.25 });
 }
 
-function buildSite(body){
-  const pages = SITE_PAGES;
+function buildSite(body, start = 0){
+  const pages = SITE_PAGES, [n0, f0] = pages[start];
   body.innerHTML = `<div class="siteview">
     <nav class="plist" aria-label="海外站页面"><div class="plh">页面 · ${pages.length}</div>
-      ${pages.map(([n,f],i)=>`<button class="${i?'':'on'}" data-f="${f}" data-n="${n}"><span class="th" style="background-image:url(assets/site/${f}.jpg)"></span><span class="pn"><b>${n}</b><small>P.${String(i+1).padStart(2,'0')}</small></span></button>`).join('')}</nav>
+      ${pages.map(([n,f],i)=>`<button class="${i === start ? 'on' : ''}" data-f="${f}" data-n="${n}"><span class="th" style="background-image:url(assets/site/${f}.jpg)"></span><span class="pn"><b>${n}</b><small>P.${String(i+1).padStart(2,'0')}</small></span></button>`).join('')}</nav>
     <div class="browser"><div class="bbar"><span class="dot" style="background:#f7a6c9"></span><span class="dot" style="background:#ffe59a"></span><span class="dot" style="background:#a6dca4"></span>
-      <span class="url"><span class="lock">🔒</span> www.doshglobal.com <em>· 首页</em></span><span class="snap">截图于 2026-09-28 · 真站可能已更新</span>
+      <span class="url"><span class="lock">🔒</span> www.doshglobal.com <em>· ${n0}</em></span><span class="snap">截图于 2026-09-28 · 真站可能已更新</span>
       <a class="live" href="https://www.doshglobal.com" target="_blank" rel="noopener">访问真站 ↗</a></div>
       <div class="prog"><i></i></div>
-      <div class="page shotwrap loading"><img class="shot" alt="海外站 首页 整页截图" src="assets/site/home.jpg"></div>
+      <div class="page shotwrap loading"><img class="shot" alt="海外站 ${n0} 整页截图" src="assets/site/${f0}.jpg"></div>
       <div class="scrollhint"><span class="mouse"></span>滚动查看整页</div></div></div>`;
   const page = body.querySelector('.page'), img = page.querySelector('.shot'), hint = body.querySelector('.scrollhint'), bar = body.querySelector('.prog i'), em = body.querySelector('.url em');
   const loaded = () => page.classList.remove('loading');
@@ -1713,9 +1786,154 @@ function buildResearch(body){
   body.querySelectorAll('.t').forEach(t=>t.onclick=()=>show(+t.dataset.i));
 }
 
+/* ================================================================== v11 摆件 + 说明书（目前只有海外站） */
+const toyEl = $('#toy');
+const PC_N = SITE_PAGES.length, PC_STEP = 360/PC_N, PC_R = 112, PANEL_H = 150;
+const TOY = { on:false, vis:false, expanded:false, k:-1, rot:0, vel:0, R:0, hot:-1, drag:null, last:0, raf:0, cards:[], fold:{ b:-178, c:178 } };
+const STAMP_SVG = `<svg class="sl-stamp" viewBox="0 0 100 100" aria-hidden="true"><defs><path id="stc" d="M50 50 m-36 0 a36 36 0 1 1 72 0 a36 36 0 1 1 -72 0"/></defs>
+  <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text font-size="10" letter-spacing="2.1" font-weight="700" fill="currentColor"><textPath href="#stc">DOSH GLOBAL · OVERSEAS · SITE ·</textPath></text>
+  <text x="50" y="48" text-anchor="middle" font-size="12.5" font-weight="800" fill="currentColor">海外站</text><text x="50" y="62" text-anchor="middle" font-size="8.5" letter-spacing="1" fill="currentColor">2026</text></svg>`;
+const hasToy = k => PROJECTS[k]?.id === 'site';
+function buildToy(k){
+  const p = PROJECTS[k];
+  const cards = SITE_PAGES.map(([n, f], i) => `<div class="pc" data-i="${i}"><div class="pc-f"><img src="assets/site/${f}.jpg" alt="明信片：${n}" draggable="false"><span>${n}</span></div>
+    <div class="pc-b"><i></i><em>P.${String(i + 1).padStart(2, '0')}</em><b class="shd"></b></div></div>`).join('');
+  const rings = [196, 236].map(y => `<div class="rk-ring" style="top:${y}px"></div>`).join('');
+  const tags = p.tags.map((t, i) => `<span style="--r:${[-2, 1.5, -1, 2][i % 4]}deg">${t}</span>`).join('');
+  toyEl.innerHTML = `<div class="toy-in">
+    <div class="rk" role="group" aria-label="明信片转架：拖动旋转，点一张明信片打开那一页">
+      <div class="rk-sh"></div>
+      <div class="rk-sc"><div class="rk-base"></div><div class="rk-pole"></div><div class="rk-ball"></div>${rings}<div class="rk-spin">${cards}</div></div>
+      <div class="rk-sign"><small>GREETINGS FROM</small>doshglobal.com</div>
+      <div class="rk-tip">${TOUCH ? '滑动' : '拖动'}转一转 · 点明信片直达那一页</div>
+    </div>
+    <div class="slip${curRare ? ' rare' : ''}" role="dialog" aria-label="${p.title} 说明书">
+      <div class="sl-p sl-a"><div class="sl-f">
+          <div class="sl-top"><b>${p.no}</b><span>扭蛋说明书</span></div>${STAMP_SVG}
+          <h2>${p.title}</h2><p class="sl-role">${p.role}</p></div>
+        <div class="sl-p sl-b"><div class="sl-f"><div class="sl-h">这颗扭蛋里装着</div><p class="sl-sum">${p.sum}</p>
+            ${p.url ? `<a class="sl-link" href="${p.url}" target="_blank" rel="noopener">${p.url.replace('https://', '')} ↗</a>` : ''}</div><div class="sl-k"></div>
+          <div class="sl-p sl-c"><div class="sl-f"><div class="sl-h">附赠贴纸</div><div class="sl-tags">${tags}</div>
+              <div class="sl-act"><button class="btn" data-a="expand">展开看看</button><button class="btn ghost" data-a="stash">收进图鉴</button></div></div><div class="sl-k"></div></div>
+        </div></div>
+    </div></div>`;
+  TOY.cards = [...toyEl.querySelectorAll('.pc')].map(el => ({ el, lift:0 }));
+  toyEl.querySelector('[data-a="expand"]').onclick = () => expandCard();
+  toyEl.querySelector('[data-a="stash"]').onclick = () => stashCard();
+  bindRack(toyEl.querySelector('.rk'));
+  TOY.fold = { b:-178, c:178 }; applyFold();
+  fitToy();
+}
+function fitToy(){
+  const inn = toyEl.querySelector('.toy-in'); if (!inn) return;
+  inn.style.scale = Math.min(1, (innerWidth - 24)/inn.offsetWidth, (innerHeight - 40)/inn.offsetHeight).toFixed(3);
+}
+addEventListener('resize', () => { if (TOY.on) fitToy(); });
+// 说明书的折叠角度 → 三块纸的姿态；折着的时候整张往下挪，让看得见的部分保持居中
+function applyFold(){
+  const sl = toyEl.querySelector('.slip'); if (!sl) return;
+  const b = sl.querySelector('.sl-b'), c = sl.querySelector('.sl-c'), F = TOY.fold;
+  b.style.transform = `rotateX(${F.b}deg)`; c.style.transform = `rotateX(${F.c}deg)`;
+  const ub = 1 - Math.abs(F.b)/180, uc = 1 - Math.abs(F.c)/180;
+  b.querySelector(':scope > .sl-f').style.setProperty('--fs', ((1 - ub)*0.4).toFixed(3));
+  c.querySelector(':scope > .sl-f').style.setProperty('--fs', ((1 - uc)*0.4).toFixed(3));
+  const vis = PANEL_H*(1 + ub + ub*uc);
+  sl.style.translate = `0 ${((PANEL_H*3 - vis)/2).toFixed(1)}px`;
+}
+const unfoldTl = () => gsap.timeline()
+  .to(TOY.fold, { b:0, duration:.6, ease:'power2.inOut', onUpdate:applyFold })
+  .to(TOY.fold, { c:0, duration:.55, ease:'back.out(1.25)', onUpdate:applyFold }, '-=.15');
+const foldTl = () => gsap.timeline()
+  .to(TOY.fold, { c:178, duration:.32, ease:'power2.in', onUpdate:applyFold })
+  .to(TOY.fold, { b:-178, duration:.36, ease:'power2.in', onUpdate:applyFold }, '-=.08');
+// 转架：自己慢慢转；拖一下会甩着转，松手后慢慢回到原速；悬停在一张明信片上就停下、那张往上抽出来一点
+function toyTick(t){
+  if (!TOY.vis){ TOY.raf = 0; return; }
+  const dt = Math.min(0.05, (t - (TOY.last || t))/1000); TOY.last = t;
+  if (!TOY.drag){ const want = REDUCED || TOY.hot >= 0 ? 0 : 14; TOY.vel += (want - TOY.vel)*Math.min(1, dt*(TOY.hot >= 0 ? 6 : 1.4)); TOY.rot += TOY.vel*dt; }
+  toyEl.querySelector('.rk-spin').style.transform = `rotateY(${TOY.rot.toFixed(2)}deg)`;
+  TOY.cards.forEach((c, i) => {
+    const f = Math.cos((i*PC_STEP + TOY.rot)*Math.PI/180);
+    c.lift += ((i === TOY.hot ? -16 : 0) - c.lift)*Math.min(1, dt*12);
+    c.el.style.transform = `rotateY(${i*PC_STEP}deg) translateZ(${TOY.R.toFixed(1)}px) translateY(${c.lift.toFixed(1)}px) rotateX(4deg)`;
+    c.el.style.setProperty('--sh', ((1 - Math.abs(f))*0.3 + (f < 0 ? 0.1 : 0)).toFixed(3));
+  });
+  TOY.raf = requestAnimationFrame(toyTick);
+}
+function startToyTick(){ TOY.vis = true; TOY.last = 0; if (!TOY.raf) TOY.raf = requestAnimationFrame(toyTick); }
+const facing = i => Math.cos((i*PC_STEP + TOY.rot)*Math.PI/180) > 0.2;
+function bindRack(rk){
+  const cardAt = e => { const el = e.target.closest?.('.pc'); return el && facing(+el.dataset.i) ? +el.dataset.i : -1; };
+  rk.addEventListener('pointerdown', e => {
+    if (S.mode !== 'card' || TOY.expanded) return;
+    TOY.drag = { x:e.clientX, t:performance.now(), moved:0, card:cardAt(e) };
+    rk.setPointerCapture(e.pointerId); rk.classList.add('drag');
+  });
+  rk.addEventListener('pointermove', e => {
+    const d = TOY.drag;
+    if (!d){ TOY.hot = TOUCH ? -1 : cardAt(e); return; }
+    const now = performance.now(), dx = e.clientX - d.x, dt = Math.max(0.008, (now - d.t)/1000);
+    d.x = e.clientX; d.t = now; d.moved += Math.abs(dx);
+    TOY.rot += dx*0.45; TOY.vel = lerp(TOY.vel, clamp(dx*0.45/dt, -420, 420), 0.5);
+    if (d.moved > 6) TOY.hot = -1;
+  });
+  const up = () => {
+    const d = TOY.drag; if (!d) return; TOY.drag = null; rk.classList.remove('drag');
+    if (d.moved < 6 && d.card >= 0) expandCard(d.card);
+  };
+  rk.addEventListener('pointerup', up); rk.addEventListener('pointercancel', up);
+  rk.addEventListener('pointerleave', () => { if (!TOY.drag) TOY.hot = -1; });
+}
+function openToy(k, from){
+  buildToy(k);
+  TOY.on = true; TOY.expanded = false; TOY.k = k; TOY.hot = -1; TOY.R = 0; TOY.rot = -60; TOY.vel = 320;
+  toyEl.classList.add('on'); startToyTick();
+  const dx = from.x - innerWidth/2, dy = from.y - innerHeight/2;
+  backdrop.style.pointerEvents = 'auto';
+  const tl = gsap.timeline();
+  tl.to(backdrop, { opacity:1, duration:.45 }, 0);
+  tl.fromTo(toyEl, { opacity:0, scale:0.08, x:dx, y:dy, rotation:-6 }, { opacity:1, scale:1, x:0, y:0, rotation:0, duration:.75, ease:'back.out(1.4)' }, 0.05);
+  tl.to(TOY, { R:PC_R, duration:1.2, ease:'elastic.out(1,.5)' }, .3);       // 明信片从立柱边上一圈弹开
+  tl.fromTo(toyEl.querySelector('.slip'), { rotation:-7, y:24 }, { rotation:0, y:0, duration:.6, ease:'back.out(1.6)' }, .35);
+  tl.add(unfoldTl(), .75);
+  if (REDUCED) tl.progress(1);
+}
+function toyExpand(start){
+  if (TOY.expanded) return;
+  TOY.expanded = true; TOY.hot = -1;
+  const p = PROJECTS[TOY.k], body = detail.querySelector('.dbody');
+  detail.querySelector('h3').innerHTML = `<small>${p.no}</small>${p.title}`; body.innerHTML = '';
+  const W = Math.min(1320, innerWidth*0.94), H = Math.min(900, innerHeight*0.9);
+  card.querySelector('.cover').style.display = 'none'; card.classList.add('expanded');
+  detail.style.display = 'flex'; detail.style.opacity = 1;
+  gsap.set(card, { width:W, height:H, xPercent:-50, yPercent:-50, x:0, y:0, rotation:0, scale:.88, opacity:0 });
+  card.style.pointerEvents = 'auto';
+  buildSite(body, start >= 0 ? start : 0);
+  gsap.timeline()
+    .to(toyEl, { scale:1.06, opacity:0, duration:.32, ease:'power2.in', onComplete(){ toyEl.classList.remove('on'); TOY.vis = false; } }, 0)
+    .to(card, { scale:1, opacity:1, duration:.5, ease:'back.out(1.3)' }, .12);
+}
+function toyCollapse(){
+  if (!TOY.expanded) return;
+  TOY.expanded = false; toyEl.classList.add('on'); startToyTick();
+  gsap.timeline()
+    .to(card, { scale:.9, opacity:0, duration:.28, ease:'power2.in', onComplete(){
+      card.style.pointerEvents = 'none'; card.classList.remove('expanded'); detail.style.display = 'none'; detail.style.opacity = 0; } }, 0)
+    .fromTo(toyEl, { scale:1.06, opacity:0 }, { scale:1, opacity:1, duration:.45, ease:'back.out(1.4)' }, .18);
+}
+function closeToy(){ TOY.on = false; TOY.vis = false; toyEl.classList.remove('on'); toyEl.innerHTML = ''; gsap.set(toyEl, { clearProps:'transform,opacity' }); }
+
 /* ================================================================== 卡片（打开 / 收进图鉴） */
 function openCard(k, fromRect, fromPt, rare){
-  curK = k; curRare = !!rare; fillCard(k);
+  curK = k; curRare = !!rare;
+  if (hasToy(k)){
+    S.mode = 'card';
+    SITE_PAGES.forEach(([,f]) => { const i = new Image(); i.src = `assets/site/${f}.jpg`; });
+    openToy(k, fromPt || { x:fromRect.left + fromRect.width/2, y:fromRect.top + fromRect.height/2 });
+    return;
+  }
+  fillCard(k);
   S.mode = 'card';
   card.classList.remove('expanded'); card.querySelector('.cover').style.display = ''; detail.style.display = 'none';
   gsap.set(card, { width:CARD_W(), height:'auto' });
@@ -1743,23 +1961,28 @@ function stashCard(){
   const r = slot.getBoundingClientRect();
   const dx = r.left + r.width/2 - innerWidth/2, dy = r.top + r.height/2 - innerHeight/2;
   S.mode = 'closing';
+  // 摆件模式：说明书先一折一折折回去、明信片收回立柱，再整个飞进图鉴
+  const toy = TOY.on && !TOY.expanded, el = toy ? toyEl : card, t0 = toy ? .55 : 0;
+  if (TOY.on && TOY.expanded){ TOY.expanded = false; detail.style.display = 'none'; }
   const tl = gsap.timeline({ onComplete(){
     card.style.pointerEvents = 'none'; backdrop.style.pointerEvents = 'none'; card.classList.remove('expanded');
+    if (TOY.on) closeToy();
     if (fromCapsule) fillSlot(k, curRare);
     afterStash(fromCapsule);
   } });
-  tl.to(card, { scale:0.06, duration:.55, ease:'power3.in' }, 0);
-  tl.to(card, { x:dx*0.5, y:dy*0.5 - 120, duration:.3, ease:'power1.out' }, 0);
-  tl.to(card, { x:dx, y:dy, duration:.3, ease:'power2.in' }, .3);
-  tl.to(card, { opacity:0, duration:.12 }, .5);
-  tl.to(backdrop, { opacity:0, duration:.4 }, .1);
+  if (toy){ TOY.hot = -1; tl.add(foldTl(), 0); tl.to(TOY, { R:0, duration:.4, ease:'power2.in' }, .1); }
+  tl.to(el, { scale:0.06, duration:.55, ease:'power3.in' }, t0);
+  tl.to(el, { x:dx*0.5, y:dy*0.5 - 120, duration:.3, ease:'power1.out' }, t0);
+  tl.to(el, { x:dx, y:dy, duration:.3, ease:'power2.in' }, t0 + .3);
+  tl.to(el, { opacity:0, duration:.12 }, t0 + .5);
+  tl.to(backdrop, { opacity:0, duration:.4 }, t0 + .1);
   if (fromCapsule){
     // 扭蛋飞进图鉴：屏幕上的一颗小扭蛋沿弧线飞到格子里
     const cap = S.cap, [sx, sy] = clToScreen(cap.x, cap.y - cap.r);
     const img = document.createElement('img'); img.src = `assets/capsules/256/capsule_${capName(cap.k, cap.rare)}.webp`; img.className = 'flycap';
     document.body.appendChild(img);
     gsap.set(img, { left:sx, top:sy, xPercent:-50, yPercent:-50, width:cap.r*2*CL.s, opacity:0 });
-    gsap.timeline({ delay:.35, onComplete(){ img.remove(); } })
+    gsap.timeline({ delay:.35 + t0, onComplete(){ img.remove(); } })
       .to(img, { opacity:1, duration:.15 })
       .to(img, { left:r.left + r.width/2, duration:.7, ease:'power1.inOut' }, 0)
       .to(img, { top:r.top + r.height/2, duration:.7, ease:'back.in(1.6)' }, 0)
