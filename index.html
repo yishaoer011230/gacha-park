@@ -474,15 +474,17 @@ const PROJECTS = [
   { id:'site', color:'#f49ac8', cap:'peach', no:'CAPSULE 01', title:'海外站 · doshglobal.com', role:'图片选用 · 版面层级 · 落地',
     sum:'集团卫浴与建筑陶瓷的海外官网，展示 Monarch 卫浴与 Oceano 瓷砖。首页与六个内页的图片和版面，由我出方案并落地。',
     tags:['官网改版','视觉选图','版面层级','后台手册'], icon:'tile', url:'https://www.doshglobal.com' },
-  { id:'asset', color:'#b79ae3', cap:'purple', no:'CAPSULE 02', title:'水华资管平台 · 算力资产台账', role:'资产列表工作台 · 12 个岗位视图 · 统一口径',
-    sum:'GPU 服务器从采购到货、验收上架，到租赁合同和收款结算的全生命周期管理。同一批数据回答机房、商务、财务三类人的问题：这台机器在哪、属于哪份合同、收了多少钱。',
-    tags:['B 端工作台','角色视图','部件 → 整机 → 机房','3D 拆解'], icon:'server', url:'https://sham.do-sh.top' },
+  { id:'asset', color:'#b79ae3', cap:'purple', no:'CAPSULE 02', title:'水华资管平台 · 算力资产台账', role:'资产域负责人 · 两人团队',
+    sum:'GPU 服务器从到货、验收上架到租赁结算的全生命周期台账。我主写到货验收和资产域审批；审批引擎和项目域由另一位开发负责，我做接入和合并上线。',
+    tags:['到货验收','审批点 × 11','流程可视化','合并收口'], icon:'server', url:'https://sham.do-sh.top',
+    stamp:['ASSET · RECEIVING · ACCEPTED ·', '已验收'], slipLink:false,
+    next:{ h:'附赠贴纸 · 下一步（规划中）', tags:['手机扫码验收','移动审批','Agent 发起审批单'] } },
   { id:'research', color:'#8cd7ea', cap:'blue', no:'CAPSULE 03', title:'算力控股调研系统', role:'资料解析 · 报告 Agent · 引用回查',
     sum:'把企业资料变成每个结论都能指回来源的可研报告——9 章、61 条引用，无法确证的内容单列「待核实」。',
     tags:['Agent 流水线','证据链','可研报告','引用回查'], icon:'doc' },
-  { id:'about', color:'#ffd98a', cap:'yellow', no:'SECRET', title:'关于我', role:'产品 · 设计 · 落地',
-    sum:'这里放一句话自我介绍、擅长的事和联系方式。（内容待你提供）',
-    tags:['联系方式待补'], icon:'star' },
+  { id:'about', color:'#ffd98a', cap:'yellow', no:'SECRET', title:'关于我', role:'产品 × 全栈 · 把业务讲清楚，再亲手做出来',
+    sum:'我习惯先把业务口述整理成术语表、字段字典和接口契约，再自己写代码落地。做过集团海外官网、算力资产平台，还有带引用回查的调研 Agent。接下来想做的是：让业务系统可以被 Agent 安全地调用。',
+    tags:['需求 → 契约 → 代码','B 端系统','业务 × Agent'], icon:'star' },
 ];
 const RARE_P = 0.05;   // 金色稀有蛋的概率（只是外观和特效更隆重，里面的项目不变）
 
@@ -861,6 +863,14 @@ const clFS = `
       n *= 1.0 - 0.38 * (1.0 - smoothstep(120.0, 620.0, length(ip - vec2(-40.0, -60.0))));
       vec2 vq = (sp / uRes - 0.5) * vec2(1.2, 1.0);
       n *= 1.0 - 0.28 * smoothstep(0.25, 0.75, length(vq));
+      // 和总览夜景对齐：暗部压深一点（不再一片灰紫）；白天有颜色的玻璃地砖夜里自己发光（粉/黄/蓝各保留本色）
+      n = pow(n, vec3(1.32)) * vec3(1.08, 1.04, 1.12);
+      float cmx = max(c.r, max(c.g, c.b)), cmn = min(c.r, min(c.g, c.b)), sat = cmx - cmn;
+      vec3 hue = (c - cmn) / max(sat, 1e-3);
+      float dv = length(c / max(lum, 1e-3) - vec3(1.129, 0.913, 1.109));   // 和地面本色（粉白）差多远：彩色玻璃砖差得远，地面和砖缝差得近
+      float tileGlow = smoothstep(0.17, 0.30, dv) * smoothstep(0.60, 0.85, lum) * smoothstep(0.08, 0.2, sat);
+      float pulse = 0.85 + 0.15 * sin(uTime * 1.3 * uMotion + ip.x * 0.004 + ip.y * 0.006);
+      n = screenB(n, mix(vec3(0.55, 0.45, 1.0), hue, 0.8) * tileGlow * 0.6 * pulse);
       float inGlobe = 1.0 - smoothstep(uGlobe.z - 30.0, uGlobe.z, length(ip - uGlobe.xy));
       n += vec3(1.0, 0.9, 0.7) * inGlobe * smoothstep(0.88, 0.99, lum) * (0.6 + 0.4 * sin(uTime * 3.0 + ip.x * 0.07 + ip.y * 0.09)) * 0.45;
       c = mix(c, n, uNight);
@@ -1268,8 +1278,17 @@ function layoutFore(){
 /* ================================================================== 音效（Web Audio，默认关闭；右上角 ♪ 打开） */
 const SFX = {
   on:false, ctx:null, master:null, buf:{}, loopSrc:null, loopGain:null, voices:0, loading:null,
-  names:['intro_build', 'night_ignite', 'firework', 'musicbox_loop', 'crank_click', 'capsule_drop', 'capsule_open', 'capsule_open_rare', 'bubble_pop', 'whoosh', ...[0,1,2,3,4,5,6,7].flatMap(k => ['tile_' + k, 'bloom_' + k])],
+  names:['intro_build', 'night_ignite', 'firework', 'musicbox_loop', 'night_loop', 'crank_click', 'capsule_drop', 'capsule_open', 'capsule_open_rare', 'bubble_pop', 'whoosh', ...[0,1,2,3,4,5,6,7].flatMap(k => ['tile_' + k, 'bloom_' + k])],
   holdLoop:false,   // 开场配乐播放时先不放背景音乐盒
+  loopName:'musicbox_loop',   // 白天：音乐盒；灯光秀之后：欢快的夜场循环 night_loop
+  // 换背景音乐：旧的 1.2 秒淡出，新的淡入
+  setLoop(name){
+    if (this.loopName === name) return; this.loopName = name;
+    if (!this.on || !this.ctx || this.holdLoop) return;
+    if (this.loopSrc){ const s = this.loopSrc, g = this.loopGain.gain, now = this.ctx.currentTime;
+      g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + 1.2); setTimeout(() => { try { s.stop(); } catch (e) {} }, 1400); this.loopSrc = null; }
+    this.startLoop();
+  },
   ensure(){
     if (this.ctx) return;
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -1289,8 +1308,9 @@ const SFX = {
     else this.stopLoop();
   },
   startLoop(){
-    if (this.loopSrc || !this.buf.musicbox_loop || this.holdLoop) return;
-    const s = this.ctx.createBufferSource(); s.buffer = this.buf.musicbox_loop; s.loop = true;
+    const name = this.buf[this.loopName] ? this.loopName : 'musicbox_loop';
+    if (this.loopSrc || !this.buf[name] || this.holdLoop) return;
+    const s = this.ctx.createBufferSource(); s.buffer = this.buf[name]; s.loop = true;
     const g = this.ctx.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(this.LOOP_G, this.ctx.currentTime + 1.5);
     s.connect(g); g.connect(this.music); s.start(); this.loopSrc = s; this.loopGain = g;
   },
@@ -1622,7 +1642,7 @@ function fillCard(k){
 /* 展开详情 */
 function expandCard(start){
   if (S.mode !== 'card' || curK === 3) return;
-  if (TOY.on) return toyExpand(typeof start === 'number' ? start : 0);
+  if (TOY.on) return toyExpand(typeof start === 'number' ? start : -1);
   const p = PROJECTS[curK];
   detail.querySelector('h3').innerHTML = `<small>${p.no}</small>${p.title}`;
   const body = detail.querySelector('.dbody'); body.innerHTML = '';
@@ -1676,13 +1696,51 @@ function buildSite(body, start = 0){
   gsap.from(btns,{ x:-16, opacity:0, duration:.35, stagger:.05, delay:.1, ease:'power2.out' });
 }
 
-function buildAsset(body){
-  body.innerHTML = `<div class="av"><div class="seg"><button class="on" data-t="ui">平台界面</button><button data-t="hw">硬件拆解</button><button data-t="layers">产品结构</button><button data-t="entry">平台入口</button></div><div class="avb"></div></div>`;
+function buildAsset(body, focus = -1){
+  body.innerHTML = `<div class="av"><div class="seg"><button data-t="mine">我做了什么</button><button data-t="ui">平台界面</button><button data-t="hw">硬件拆解</button><button data-t="layers">产品结构</button><button data-t="entry">平台入口</button></div><div class="avb"></div></div>`;
   const box = body.querySelector('.avb'), btns = [...body.querySelectorAll('.seg button')];
-  const views = { ui:buildUI, hw:buildHW, layers:buildLayers, entry:buildEntry };
-  const show = t => { btns.forEach(b => b.classList.toggle('on', b.dataset.t === t)); box.innerHTML = ''; views[t](box); };
+  const views = { mine:b => buildMine(b, focus), ui:buildUI, hw:buildHW, layers:buildLayers, entry:buildEntry };
+  const show = t => { btns.forEach(b => b.classList.toggle('on', b.dataset.t === t)); box.innerHTML = ''; views[t](box); focus = -1; };
   btns.forEach(b => b.onclick = () => { if (!b.classList.contains('on')) show(b.dataset.t); });
-  show('ui');
+  show('mine');
+}
+/* 「我做了什么」：左边是机柜的每一层（谁写的一眼分清），右边三个案例 + 下一步 */
+const ASSET_CASES = [
+  { t:'到货逐件验收', k:'我主写',
+    q:'到货明细和采购申报对不上；验收结论被改过以后，说不清当时验的是什么。',
+    d:'按采购申报逐件核对 SN；每次验收存一版、不覆盖旧版，审批生效时冻结整批快照。采购能看到验收结果，到货确认只能由机房做。',
+    r:'每台机器都能追溯到哪一批到货、谁验的、当时的结论。配有专项测试。' },
+  { t:'所有写操作都走审批', k:'审批点由我定义 · 引擎由另一位开发负责',
+    q:'资产状态、机柜位置、SN 这些关键字段，原来好几个入口都能直接改。',
+    d:'资产域定义 11 个审批点，写操作只能经审批引擎生效；按风险配审批人，不能自己批自己。再做流程图：每单卡在哪一环、等了多久。',
+    r:'每次改动都有单据可查。这些审批点也是以后接 Agent 的口子：Agent 只能发起审批单，不能直接改数据。' },
+  { t:'多分支合并收口', k:'我负责',
+    q:'多人并行开发：数据库迁移编号撞车，合并时字段被吃掉，同一个状态在不同页面口径不一样。',
+    d:'由我统一并分支：重排迁移、修主干的测试和类型构建，对齐资产状态七值、可租口径和看板下钻，给列表接口设 SQL 查询次数预算。',
+    r:'主干始终能构建、测试通过，各页面的数字对得上。' },
+];
+const ASSET_NEXT = [
+  ['手机扫码验收', '到货现场逐件扫 SN，结果直接进验收单'],
+  ['移动审批', '复用消息中心的待办，在手机上批'],
+  ['Agent 发起审批单', '用一句话发起调拨、报修；Agent 只能起草，由人确认后才生效'],
+];
+function buildMine(body, focus){
+  const own = ASSET_RACK.map(([kind, n, t, c], i) => `<div class="ow ${kind}" data-i="${i}" data-c="${c}" style="--c:${RACK_C[i] || '#fff'}"><i class="lg ${kind}"></i><div><b>${n}<em class="${kind}">${RACK_BADGE[kind]}</em></b><span>${t}</span></div></div>`).join('');
+  const cases = ASSET_CASES.map((c, i) => `<article class="cs" data-c="${i}"><header><span class="n">0${i + 1}</span><h4>${c.t}</h4><em>${c.k}</em></header>
+      <div class="qdr"><div><small>问题</small><p>${c.q}</p></div><div><small>我的做法</small><p>${c.d}</p></div><div><small>结果</small><p>${c.r}</p></div></div></article>`).join('');
+  const nx = ASSET_NEXT.map(([n, t], i) => `<div class="nx"><span class="n">${i + 1}</span><b>${n}</b><span>${t}</span></div>`).join('<i class="arw">→</i>');
+  body.innerHTML = `<div class="mine"><aside class="own"><div class="oh">我在这套系统里的位置<small>两人团队 · 从下往上是资产的一生</small></div>${own}
+      <div class="olg">${RACK_LEGEND}</div></aside>
+    <div class="cases">${cases}<section class="cs next" data-c="next"><header><span class="n">→</span><h4>下一步：手机 App + Agent</h4><em class="plan">规划中</em></header><div class="nxs">${nx}</div></section></div></div>`;
+  const rows = [...body.querySelectorAll('.ow')], cards = [...body.querySelectorAll('.cs')], sc = body.querySelector('.cases');
+  const hi = c => cards.forEach(el => el.classList.toggle('hot', c !== '-1' && el.dataset.c === c));
+  const go = (c, smooth = true) => { const el = cards.find(x => x.dataset.c === c); if (!el) return;
+    sc.scrollTo({ top:el.offsetTop - sc.offsetTop - 8, behavior:smooth ? 'smooth' : 'auto' });
+    el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); };
+  rows.forEach(r => { r.onmouseenter = () => hi(r.dataset.c); r.onmouseleave = () => hi(''); r.onclick = () => { rows.forEach(x => x.classList.toggle('on', x === r)); go(r.dataset.c); }; });
+  gsap.from(rows, { x:-14, opacity:0, duration:.35, stagger:.04, ease:'power2.out' });
+  gsap.from(cards, { y:18, opacity:0, duration:.45, stagger:.08, ease:'back.out(1.4)', delay:.1 });
+  if (focus >= 0){ rows[focus]?.classList.add('on'); setTimeout(() => go(String(ASSET_RACK[focus][3])), 450); }
 }
 const ASSET_UI_C = ['#f49ac8', '#b79ae3', '#8cd7ea', '#ffc96b', '#8fdcae'];
 const ASSET_UI = [
@@ -1812,44 +1870,90 @@ function buildResearch(body){
 const toyEl = $('#toy');
 const PC_N = SITE_PAGES.length, PC_STEP = 360/PC_N, PC_R = 112, PANEL_H = 150;
 const TOY = { on:false, vis:false, expanded:false, k:-1, rot:0, vel:0, R:0, hot:-1, drag:null, last:0, raf:0, cards:[], fold:{ b:-178, c:178 } };
-const STAMP_SVG = `<svg class="sl-stamp" viewBox="0 0 100 100" aria-hidden="true"><defs><path id="stc" d="M50 50 m-36 0 a36 36 0 1 1 72 0 a36 36 0 1 1 -72 0"/></defs>
+const stampSVG = (ring, mid) => `<svg class="sl-stamp" viewBox="0 0 100 100" aria-hidden="true"><defs><path id="stc" d="M50 50 m-36 0 a36 36 0 1 1 72 0 a36 36 0 1 1 -72 0"/></defs>
   <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="1.3"/>
-  <text font-size="10" letter-spacing="2.1" font-weight="700" fill="currentColor"><textPath href="#stc">DOSH GLOBAL · OVERSEAS · SITE ·</textPath></text>
-  <text x="50" y="48" text-anchor="middle" font-size="12.5" font-weight="800" fill="currentColor">海外站</text><text x="50" y="62" text-anchor="middle" font-size="8.5" letter-spacing="1" fill="currentColor">2026</text></svg>`;
-const hasToy = k => PROJECTS[k]?.id === 'site';
-function buildToy(k){
-  const p = PROJECTS[k];
+  <text font-size="10" letter-spacing="2.1" font-weight="700" fill="currentColor"><textPath href="#stc">${ring}</textPath></text>
+  <text x="50" y="48" text-anchor="middle" font-size="12.5" font-weight="800" fill="currentColor">${mid}</text><text x="50" y="62" text-anchor="middle" font-size="8.5" letter-spacing="1" fill="currentColor">2026</text></svg>`;
+const hasToy = k => ['site', 'asset'].includes(PROJECTS[k]?.id);
+function siteRackHTML(){
   const cards = SITE_PAGES.map(([n, f], i) => `<div class="pc" data-i="${i}"><div class="pc-f"><img src="assets/site/${f}.jpg" alt="明信片：${n}" draggable="false"><span>${n}</span></div>
     <div class="pc-b"><i></i><em>P.${String(i + 1).padStart(2, '0')}</em><b class="shd"></b></div></div>`).join('');
   const rings = [196, 236].map(y => `<div class="rk-ring" style="top:${y}px"></div>`).join('');
-  const tags = p.tags.map((t, i) => `<span style="--r:${[-2, 1.5, -1, 2][i % 4]}deg">${t}</span>`).join('');
-  toyEl.innerHTML = `<div class="toy-in">
-    <div class="rk" role="group" aria-label="明信片转架：拖动旋转，点一张明信片打开那一页">
+  return `<div class="rk" role="group" aria-label="明信片转架：拖动旋转，点一张明信片打开那一页">
       <div class="rk-sh"></div>
       <div class="rk-sc"><img class="rk-stand" src="assets/toy/rack_stand.webp" alt="" draggable="false">${rings}<div class="rk-spin">${cards}</div></div>
       <div class="rk-sign"><small>GREETINGS FROM</small>doshglobal.com</div>
       <div class="rk-tip">${TOUCH ? '滑动' : '拖动'}转一转 · 点明信片直达那一页</div>
-    </div>
-    <div class="slip${curRare ? ' rare' : ''}" role="dialog" aria-label="${p.title} 说明书">
+    </div>`;
+}
+function buildToy(k){
+  const p = PROJECTS[k], site = p.id === 'site';
+  const tags = (p.next ? p.next.tags : p.tags).map((t, i) => `<span style="--r:${[-2, 1.5, -1, 2][i % 4]}deg">${t}</span>`).join('');
+  const link = p.url && p.slipLink !== false ? `<a class="sl-link" href="${p.url}" target="_blank" rel="noopener">${p.url.replace('https://', '')} ↗</a>` : '';
+  toyEl.innerHTML = `<div class="toy-in">
+    ${site ? siteRackHTML() : cabinetHTML()}
+    <div class="slip${curRare ? ' rare' : ''}${site ? '' : ' ' + p.id}" role="dialog" aria-label="${p.title} 说明书">
       <div class="sl-p sl-a"><div class="sl-f">
-          <div class="sl-top"><b>${p.no}</b><span>扭蛋说明书</span></div>${STAMP_SVG}
+          <div class="sl-top"><b>${p.no}</b><span>扭蛋说明书</span></div>${stampSVG(...(p.stamp || ['DOSH GLOBAL · OVERSEAS · SITE ·', '海外站']))}
           <h2>${p.title}</h2><p class="sl-role">${p.role}</p></div>
-        <div class="sl-p sl-b"><div class="sl-f"><div class="sl-h">这颗扭蛋里装着</div><p class="sl-sum">${p.sum}</p>
-            ${p.url ? `<a class="sl-link" href="${p.url}" target="_blank" rel="noopener">${p.url.replace('https://', '')} ↗</a>` : ''}</div><div class="sl-k"></div>
-          <div class="sl-p sl-c"><div class="sl-f"><div class="sl-h">附赠贴纸</div><div class="sl-tags">${tags}</div>
+        <div class="sl-p sl-b"><div class="sl-f"><div class="sl-h">这颗扭蛋里装着</div><p class="sl-sum">${p.sum}</p>${link}</div><div class="sl-k"></div>
+          <div class="sl-p sl-c"><div class="sl-f"><div class="sl-h">${p.next ? p.next.h : '附赠贴纸'}</div><div class="sl-tags${p.next ? ' plan' : ''}">${tags}</div>
               <div class="sl-act"><button class="btn" data-a="expand">展开看看</button><button class="btn ghost" data-a="stash">收进图鉴</button></div></div><div class="sl-k"></div></div>
         </div></div>
     </div></div>`;
+  TOY.site = site;
   TOY.cards = [...toyEl.querySelectorAll('.pc')].map(el => ({ el, lift:0 }));
   toyEl.querySelector('[data-a="expand"]').onclick = () => expandCard();
   toyEl.querySelector('[data-a="stash"]').onclick = () => stashCard();
-  bindRack(toyEl.querySelector('.rk'));
+  if (site) bindRack(toyEl.querySelector('.rk')); else bindCabinet(toyEl.querySelector('.cab'));
   TOY.fold = { b:-178, c:178 }; applyFold();
   fitToy();
 }
+
+/* 资管的摆件 = 一台小机柜：从下往上是资产的生命周期，最上面一层是还没做的下一步。
+   亮灯的抽屉是我主写的，半透明的是我接入 / 集成的，虚线的是规划中。点抽屉 → 展开到「我做了什么」那一段 */
+const ASSET_RACK = [   // [类型, 名字, 这一层说明, 对应「我做了什么」里的第几个案例（'next' = 下一步）]
+  ['plan', '手机 App · Agent', '规划中：手机扫码验收、移动审批、Agent 发起审批单', 'next'],
+  ['co', '合并与发布收口', '多人并行开发，我负责并分支、解迁移撞号、修主干的测试和构建', 2],
+  ['co', '自研 / 自用看板接入', '这个域由另一位开发负责，我把它接进看板和使用安排', -1],
+  ['mine', '项目台账 · 开票', '台账表、合同金额与月租金落库、开票模块、对账', -1],
+  ['mine', '审批流程图 · 消息中心', '每一单卡在哪一环、每环等了多久；待办集中到一处', 1],
+  ['mine', '资产域 11 个审批点', '采购、调拨、改 SN、换机柜、退役、报修……都只能走审批生效', 1],
+  ['mine', '到货逐件验收', '按采购申报逐件核对 SN，验收留版本链，生效时冻结快照', 0],
+];
+const RACK_C = ['', '', '', '#8fdcae', '#8cd7ea', '#b79ae3', '#f49ac8'];
+const RACK_BADGE = { mine:'我主写', co:'接入 · 集成', plan:'规划中' };
+const RACK_LEGEND = `<span><i class="lg mine"></i>我主写</span><span><i class="lg co"></i>接入 · 集成</span><span><i class="lg plan"></i>规划中</span>`;
+function cabinetHTML(){
+  const dws = ASSET_RACK.map(([kind, n], i) => `<button class="dw ${kind}" data-i="${i}" style="top:${24 + i*45}px;--c:${RACK_C[i] || '#fff'};--d:${(i*0.37).toFixed(2)}s" aria-label="${n}（${RACK_BADGE[kind]}）">
+      <span class="dw-in"><span class="dw-t"></span><span class="dw-s"></span><span class="dw-f"><i class="led"></i><b>${n}</b><em>${RACK_BADGE[kind]}</em></span></span></button>`).join('');
+  return `<div class="cab" role="group" aria-label="我的机柜：每个抽屉是一块工作，点开看详情">
+      <div class="cab-sh"></div>
+      <div class="cab-sc"><div class="cab-back"></div><div class="cab-side"></div><div class="cab-top"></div><div class="cab-bot"></div>
+        <div class="cab-post l"></div><div class="cab-post r"></div>${dws}<i class="cab-foot a"></i><i class="cab-foot b"></i></div>
+      <div class="cab-sign"><small>MY RACK</small>资产域 · 我的机柜</div>
+      <div class="cab-cap"><div class="cc-lg">${RACK_LEGEND}</div><div class="cc-d"></div></div>
+    </div>`;
+}
+function bindCabinet(cab){
+  const cap = cab.querySelector('.cab-cap'), d = cap.querySelector('.cc-d'), dws = [...cab.querySelectorAll('.dw')];
+  const show = i => { dws.forEach(el => el.classList.toggle('hot', +el.dataset.i === i)); cap.classList.toggle('on', i >= 0);
+    if (i >= 0){ const [kind, n, t] = ASSET_RACK[i]; d.innerHTML = `<b>${n}<em class="${kind}">${RACK_BADGE[kind]}</em></b>${t}`; } };
+  dws.forEach(el => {
+    const i = +el.dataset.i;
+    el.onmouseenter = () => { if (!TOUCH) { show(i); SFX.play('crank_click', { gain:0.18, rate:1.5 + i*0.06 }); } };
+    el.onmouseleave = () => { if (!TOUCH) show(-1); };
+    el.onfocus = () => show(i); el.onblur = () => show(-1);
+    // 手机上：第一下拉出抽屉看说明，再点一下才展开
+    el.onclick = () => { if (S.mode !== 'card' || TOY.expanded) return;
+      if (TOUCH && !el.classList.contains('hot')){ show(i); return; }
+      expandCard(i); };
+  });
+}
 function fitToy(){
   const inn = toyEl.querySelector('.toy-in'); if (!inn) return;
-  inn.style.scale = Math.min(1, (innerWidth - 24)/inn.offsetWidth, (innerHeight - 40)/inn.offsetHeight).toFixed(3);
+  // 按屏幕放大缩小：大屏放大到占满约 80% 高度（最多 1.6 倍，不压到底部的图鉴栏），小屏 / iPad 竖屏缩到放得下
+  inn.style.scale = Math.min(1.6, (innerWidth - 32)/inn.offsetWidth, (innerHeight*0.8 - 20)/inn.offsetHeight).toFixed(3);
 }
 addEventListener('resize', () => { if (TOY.on) fitToy(); });
 // 说明书的折叠角度 → 三块纸的姿态；折着的时候整张往下挪，让看得见的部分保持居中
@@ -1871,7 +1975,7 @@ const foldTl = () => gsap.timeline()
   .to(TOY.fold, { b:-178, duration:.36, ease:'power2.in', onUpdate:applyFold }, '-=.08');
 // 转架：自己慢慢转；拖一下会甩着转，松手后慢慢回到原速；悬停在一张明信片上就停下、那张往上抽出来一点
 function toyTick(t){
-  if (!TOY.vis){ TOY.raf = 0; return; }
+  if (!TOY.vis || !TOY.site){ TOY.raf = 0; return; }
   const dt = Math.min(0.05, (t - (TOY.last || t))/1000); TOY.last = t;
   if (!TOY.drag){ const want = REDUCED || TOY.hot >= 0 ? 0 : 14; TOY.vel += (want - TOY.vel)*Math.min(1, dt*(TOY.hot >= 0 ? 6 : 1.4)); TOY.rot += TOY.vel*dt; }
   toyEl.querySelector('.rk-spin').style.transform = `rotateY(${TOY.rot.toFixed(2)}deg)`;
@@ -1916,7 +2020,16 @@ function openToy(k, from){
   const tl = gsap.timeline();
   tl.to(backdrop, { opacity:1, duration:.45 }, 0);
   tl.fromTo(toyEl, { opacity:0, scale:0.08, x:dx, y:dy, rotation:-6 }, { opacity:1, scale:1, x:0, y:0, rotation:0, duration:.75, ease:'back.out(1.4)' }, 0.05);
-  tl.to(TOY, { R:PC_R, duration:1.2, ease:'elastic.out(1,.5)' }, .3);       // 明信片从立柱边上一圈弹开
+  if (TOY.site) tl.to(TOY, { R:PC_R, duration:1.2, ease:'elastic.out(1,.5)' }, .3);       // 明信片从立柱边上一圈弹开
+  else {
+    // 机柜：抽屉从下往上一格格推进柜子，灯跟着亮起来；说明书打开后盖一个「已验收」章
+    const ins = [...toyEl.querySelectorAll('.dw-in')].reverse();
+    tl.fromTo(ins, { z:150, opacity:0 }, { z:0, opacity:1, duration:.42, stagger:.07, ease:'back.out(1.5)' }, .35);
+    ins.forEach((el, i) => tl.add(() => { el.parentElement.classList.add('lit'); SFX.play('crank_click', { gain:0.22, rate:1.2 + i*0.07 }); }, .62 + i*.07));
+    const st = toyEl.querySelector('.sl-stamp');
+    tl.fromTo(st, { scale:1.9, opacity:0, rotation:-4 }, { scale:1, opacity:.82, rotation:-14, duration:.32, ease:'back.out(2.2)',
+      onStart(){ SFX.play('capsule_drop', { gain:0.4, rate:.75 }); } }, 2.05);
+  }
   tl.fromTo(toyEl.querySelector('.slip'), { rotation:-7, y:24 }, { rotation:0, y:0, duration:.6, ease:'back.out(1.6)' }, .35);
   tl.add(unfoldTl(), .75);
   if (REDUCED) tl.progress(1);
@@ -1931,7 +2044,7 @@ function toyExpand(start){
   detail.style.display = 'flex'; detail.style.opacity = 1;
   gsap.set(card, { width:W, height:H, xPercent:-50, yPercent:-50, x:0, y:0, rotation:0, scale:.88, opacity:0 });
   card.style.pointerEvents = 'auto';
-  buildSite(body, start >= 0 ? start : 0);
+  if (p.id === 'asset') buildAsset(body, start); else buildSite(body, start >= 0 ? start : 0);
   gsap.timeline()
     .to(toyEl, { scale:1.06, opacity:0, duration:.32, ease:'power2.in', onComplete(){ toyEl.classList.remove('on'); TOY.vis = false; } }, 0)
     .to(card, { scale:1, opacity:1, duration:.5, ease:'back.out(1.3)' }, .12);
@@ -1951,7 +2064,8 @@ function openCard(k, fromRect, fromPt, rare){
   curK = k; curRare = !!rare;
   if (hasToy(k)){
     S.mode = 'card';
-    SITE_PAGES.forEach(([,f]) => { const i = new Image(); i.src = `assets/site/${f}.jpg`; });
+    if (PROJECTS[k].id === 'site') SITE_PAGES.forEach(([,f]) => { const i = new Image(); i.src = `assets/site/${f}.jpg`; });
+    else ['ui_overview', 'ui_list'].forEach(f => { const i = new Image(); i.src = `assets/asset/${f}.jpg`; });
     openToy(k, fromPt || { x:fromRect.left + fromRect.width/2, y:fromRect.top + fromRect.height/2 });
     return;
   }
@@ -1992,7 +2106,9 @@ function stashCard(){
     if (fromCapsule) fillSlot(k, curRare);
     afterStash(fromCapsule);
   } });
-  if (toy){ TOY.hot = -1; tl.add(foldTl(), 0); tl.to(TOY, { R:0, duration:.4, ease:'power2.in' }, .1); }
+  if (toy){ TOY.hot = -1; tl.add(foldTl(), 0);
+    if (TOY.site) tl.to(TOY, { R:0, duration:.4, ease:'power2.in' }, .1);
+    else tl.to(toyEl.querySelectorAll('.dw-in'), { z:60, duration:.3, stagger:.03, ease:'power2.in' }, .05); }
   tl.to(el, { scale:0.06, duration:.55, ease:'power3.in' }, t0);
   tl.to(el, { x:dx*0.5, y:dy*0.5 - 120, duration:.3, ease:'power1.out' }, t0);
   tl.to(el, { x:dx, y:dy, duration:.3, ease:'power2.in' }, t0 + .3);
@@ -2044,6 +2160,7 @@ function nightTransition(auto){
     onComplete(){ if (auto){ setHint('月亮亮了 · 再扭一次 ☾', [CLOSE.crank[0], CLOSE.crank[1] - 40]); toast('仲夏夜开园 ✦ 第四颗扭蛋解锁'); } } });
   gsap.to(ovU.uIgnite, { value:1, duration:REDUCED ? .1 : 2.6, delay:D*0.55, ease:'none' });
   if (SFX.on){ SFX.track('night_ignite', 0.85); SFX.duck(6); }   // 黄昏铺底 → 灯逐盏亮时玻璃音阶往上爬 → 和弦绽开
+  gsap.delayedCall(REDUCED ? .2 : 5.6, () => { if (S.night > 0.5) SFX.setLoop('night_loop'); });   // 灯光秀放完 → 换成欢快的夜场音乐
   gsap.to(ovU.uSearch, { value:1, duration:REDUCED ? .1 : 1.8, delay:D*0.8, ease:'sine.out' });
   if (OV.mode === 'overview' && !REDUCED){
     [[0.95, [700, 150], true], [1.35, [1250, 110], false], [1.7, [380, 210], false]].forEach(([k, p, big]) => gsap.delayedCall(D*k, () => {
@@ -2059,6 +2176,7 @@ function toggleNight(){
     gsap.to(ovU.uSearch, { value:0, duration:REDUCED ? .1 : .8 });
     gsap.to(ovU.uIgnite, { value:0, duration:REDUCED ? .1 : 1.0, ease:'none' });
     gsap.to(o, { t:0, duration:REDUCED ? .1 : 2.8, delay:REDUCED ? 0 : .3, ease:'sine.inOut', onUpdate(){ applyNight(o.t); } });
+    SFX.setLoop('musicbox_loop');
   }
   else nightTransition(false);
 }
@@ -2572,16 +2690,11 @@ const clock = new THREE.Clock();
 if (DEBUG || Q.has('fps')){ QUAL.fpsEl = document.createElement('div'); QUAL.fpsEl.id = 'fps'; document.body.appendChild(QUAL.fpsEl); }
 function setPR(pr){ QUAL.pr = pr; R.setPixelRatio(pr); R.setSize(innerWidth, innerHeight, false); ovU.uDpr.value = pr; }
 // 自动降画质：每 40 帧看一次平均帧率，低于 ~40fps 就降一档；推镜头时只在明显卡（<24fps）时才降
-// 档位：像素比降到 1 → 关景深/云影 → 粒子减半 → 像素比 0.8 → 流畅模式（关毛玻璃）→ 像素比 0.6
-const QSTEPS = [
-  () => QUAL.pr > 1 && (setPR(Math.max(1, +(QUAL.pr - 0.5).toFixed(2))), true),
-  () => QUAL.level < 1 && (QUAL.level = 1, clU.uCloud.value = 0, CL.dofBase = 0, QUAL.noDof = true, true),
-  () => QUAL.level < 2 && (QUAL.level = 2, FX.cap = 450, true),
-  () => QUAL.pr > 0.8 && (setPR(0.8), true),
-  () => QUAL.level < 3 && (QUAL.level = 3, document.body.classList.add('lite'), FX.cap = 260, true),
-  () => QUAL.pr > 0.6 && (setPR(0.6), true),
-];
-function degrade(){ for (const f of QSTEPS) if (f()) return true; return false; }
+// 只降渲染分辨率（像素比），所有特效都保留：2 → 1.5 → 1.25 → 1 → 0.85 → 0.75
+// （?lite 是手动的省电模式：会关景深/云影/毛玻璃，默认不用）
+const PR_STEPS = [1.5, 1.25, 1, 0.85, 0.75];
+function degrade(){ const nx = PR_STEPS.find(v => v < QUAL.pr - 0.01); if (nx == null) return false; setPR(nx); return true; }
+function liteMode(){ QUAL.level = 3; clU.uCloud.value = 0; CL.dofBase = 0; QUAL.noDof = true; FX.cap = 450; document.body.classList.add('lite'); }
 function perfTick(raw){
   if (raw > 0.25 || document.hidden) return;
   QUAL.fAcc += raw; QUAL.fN++;
@@ -2591,16 +2704,17 @@ function perfTick(raw){
   QUAL.acc += raw; QUAL.n++;
   if (QUAL.n >= 40){
     const avg = QUAL.acc/QUAL.n, moving = OV.mode === 'pushing' || OV.mode === 'pulling';
-    if (avg > (moving ? 1/24 : 1/40) && degrade() && QUAL.level >= 3 && !QUAL.told){ QUAL.told = true; toast('已切到流畅模式'); }
+    if (avg > (moving ? 1/24 : 1/40)) degrade();
     QUAL.acc = QUAL.n = 0;
   }
 }
-// Linux 上 Chrome/Firefox 经常没开显卡加速（SwiftShader / llvmpipe 软件渲染），一开始就用流畅模式
+// Linux 上 Chrome/Firefox 经常没开显卡加速（SwiftShader / llvmpipe 软件渲染）
 (() => {
   let name = '';
   try { const gl = R.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); name = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER)); } catch (e) {}
   QUAL.soft = /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i.test(name);
-  if (Q.has('lite') || (QUAL.soft && !Q.has('hq'))){ while (QUAL.level < 3 && degrade()); setPR(0.6); }
+  if (QUAL.soft && !Q.has('hq')) setPR(Math.min(QUAL.pr, 0.85));   // 软件渲染：先从低一点的分辨率开始，特效照旧
+  if (Q.has('lite')){ liteMode(); setPR(0.75); }
 })();
 CL.dofBase = REDUCED ? 0 : 0.7;
 // 光标停住 2.5 秒（或手机没有陀螺仪）时，画面自己慢慢左右轻晃
