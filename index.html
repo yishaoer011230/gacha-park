@@ -142,6 +142,13 @@
     transform:translate(-50%,-120%);opacity:0;transition:opacity .35s}
   #ovTip::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:inherit;border-right:1px solid var(--glass-line);border-bottom:1px solid var(--glass-line);transform:translateX(-50%) rotate(45deg)}
   #ovTip.on{opacity:1}
+  /* 开场入口：点一下带着音乐入园（浏览器不允许没点过就出声） */
+  #gate{position:fixed;left:50%;top:62%;z-index:6;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;pointer-events:none;transition:opacity .6s}
+  #gate.on{opacity:1;pointer-events:auto}
+  #gate button{border:1px solid var(--glass-line);background:var(--glass);color:var(--ink);border-radius:999px;padding:12px 22px;font-size:15px;letter-spacing:.06em;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow);animation:gateBreath 2.4s ease-in-out infinite}
+  #gate small{font-size:12px;color:var(--ink-soft)}
+  @keyframes gateBreath{50%{transform:scale(1.04)}}
+  @media (prefers-reduced-motion:reduce){#gate button{animation:none}}
   #btnSpin,#btnReset,#btnHome,#dex,#hint{transition:opacity .5s, visibility .5s}
   body.ov #dex, body.ov #hint{opacity:0 !important;visibility:hidden;pointer-events:none}
   body.ov #btnSpin, body.ov #btnReset, body.ov #btnHome{display:none}
@@ -192,6 +199,7 @@ if (!/^https?:$/.test(location.protocol)) addEventListener('DOMContentLoaded', (
 <body class="ov">
 <canvas id="ov"></canvas>
 <div id="ovTip">点一下，进入扭蛋机</div>
+<div id="gate"><button id="btnGate">♪ 点一下 · 带着音乐入园</button><small>不点也行，几秒后静音开始</small></div>
 <div id="say"></div>
 <div id="top">
   <div id="brand"><b>仲夏夜扭蛋机</b><small>每颗扭蛋里装着一个项目 · 开蛋特效小样</small></div>
@@ -487,7 +495,7 @@ const ovPaint = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMa
         vec4 P = texture2D(uReveal, uv);                       // R = 已经长出来，G = 还没长出来的设施
         float th = fromOrigin(ip) * 0.86 + (vnoise(ip / 90.0) * 0.6 + vnoise(ip / 26.0) * 0.4) * 0.14;
         float front = uBuild * 1.15 - 0.05;
-        float rev = max(smoothstep(th - 0.012, th + 0.012, front) * (1.0 - P.g), P.r);
+        float rev = clamp(smoothstep(th - 0.012, th + 0.012, front) * (1.0 - P.g) + P.r, 0.0, 1.0);   // 相加（不是取最大）：长好的设施边缘不留半透明白圈
         vec2 ca = vec2(1.8 * (1.0 - uBuild) + 0.6, 0.0);
         vec3 e = vec3(texture2D(uLine, toUV(ip + ca)).r, texture2D(uLine, uv).r, texture2D(uLine, toUV(ip - ca)).r);
         vec3 sketch = vec3(1.0, 0.978, 0.986) * (1.0 - e) + texture2D(uDay, uv).rgb * 0.78 * e;
@@ -1018,7 +1026,8 @@ function layoutFore(){
 /* ================================================================== 音效（Web Audio，默认关闭；右上角 ♪ 打开） */
 const SFX = {
   on:false, ctx:null, master:null, buf:{}, loopSrc:null, loopGain:null, voices:0, loading:null,
-  names:['musicbox_loop', 'crank_click', 'capsule_drop', 'capsule_open', 'capsule_open_rare', 'bubble_pop', 'whoosh', ...[0,1,2,3,4,5,6,7].map(k => 'tile_' + k)],
+  names:['intro_build', 'night_ignite', 'firework', 'musicbox_loop', 'crank_click', 'capsule_drop', 'capsule_open', 'capsule_open_rare', 'bubble_pop', 'whoosh', ...[0,1,2,3,4,5,6,7].flatMap(k => ['tile_' + k, 'bloom_' + k])],
+  holdLoop:false,   // 开场配乐播放时先不放背景音乐盒
   ensure(){
     if (this.ctx) return;
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -1036,12 +1045,25 @@ const SFX = {
     const b = $('#btnSound'); b.classList.toggle('on', this.on); b.setAttribute('aria-pressed', this.on); b.innerHTML = this.on ? '♪<span class="t"> 声音开</span>' : '♪<span class="t"> 声音</span>';
   },
   startLoop(){
-    if (this.loopSrc || !this.buf.musicbox_loop) return;
+    if (this.loopSrc || !this.buf.musicbox_loop || this.holdLoop) return;
     const s = this.ctx.createBufferSource(); s.buffer = this.buf.musicbox_loop; s.loop = true;
     const g = this.ctx.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(0.28, this.ctx.currentTime + 1.5);
     s.connect(g); g.connect(this.master); s.start(); this.loopSrc = s; this.loopGain = g;
   },
   stopLoop(){ if (!this.loopSrc) return; const s = this.loopSrc, g = this.loopGain; g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4); setTimeout(() => s.stop(), 500); this.loopSrc = null; },
+  // 整段配乐（不占音效的同时发声名额）
+  track(name, gain = 1){
+    if (!this.on || !this.buf[name]) return null;
+    if (this.ctx.state !== 'running') this.ctx.resume();
+    const s = this.ctx.createBufferSource(); s.buffer = this.buf[name];
+    const g = this.ctx.createGain(); g.gain.value = gain; s.connect(g); g.connect(this.master); s.start(); return s;
+  },
+  // 配乐响起时把背景音乐盒压低，几秒后再抬回来
+  duck(sec, level = 0.06){
+    if (!this.loopGain) return; const g = this.loopGain.gain, now = this.ctx.currentTime;
+    g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(level, now + 0.4);
+    g.setValueAtTime(level, now + sec); g.linearRampToValueAtTime(0.28, now + sec + 2.0);
+  },
   play(name, { gain = 1, rate = 1 } = {}){
     if (!this.on || !this.buf[name] || this.voices > 10) return;
     if (this.ctx.state !== 'running') this.ctx.resume();
@@ -1474,6 +1496,7 @@ function nightTransition(auto){
   gsap.to(o, { t:1, duration:D, ease:'sine.inOut', onUpdate(){ applyNight(o.t); },
     onComplete(){ if (auto){ setHint('月亮亮了 · 再扭一次 ☾', [CLOSE.crank[0], CLOSE.crank[1] - 40]); toast('仲夏夜开园 ✦ 第四颗扭蛋解锁'); } } });
   gsap.to(ovU.uIgnite, { value:1, duration:REDUCED ? .1 : 2.6, delay:D*0.55, ease:'none' });
+  if (SFX.on){ SFX.track('night_ignite', 0.85); SFX.duck(6); }   // 黄昏铺底 → 灯逐盏亮时玻璃音阶往上爬 → 和弦绽开
   gsap.to(ovU.uSearch, { value:1, duration:REDUCED ? .1 : 1.8, delay:D*0.8, ease:'sine.out' });
   if (OV.mode === 'overview' && !REDUCED){
     [[0.95, [700, 150], true], [1.35, [1250, 110], false], [1.7, [380, 210], false]].forEach(([k, p, big]) => gsap.delayedCall(D*k, () => {
@@ -1566,7 +1589,7 @@ const layer = () => OV.mode === 'overview' ? { bub:ovBub, toImg:ovToImg, toScree
 
 canvas.addEventListener('pointerdown', e => {
   SFX.ctx?.resume(); P.pos = [e.clientX, e.clientY];
-  if (BUILD.on){ buildSkip(); return; }
+  if (BUILD.on){ BUILD.go ? buildSkip() : buildGo(true); return; }
   if (S.mode === 'card' || S.mode === 'closing') return;
   const L = layer();
   if (OV.mode === 'overview'){
@@ -1782,7 +1805,7 @@ function buildWanted(){
 // 主图加载前就切到线稿状态，免得先闪一下完整的画
 if (buildWanted()){ ovU.uBuild.value = 0; revealG.fillStyle = '#000'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true; }
 function maybeBuild(){ if (OV.ready && BUILD.data && !BUILD.started && ovU.uBuild.value < 1) startBuild(); }
-const BUILD_T = 3.6;
+const BUILD_T = 6.0, BUILD_DELAY = 2.0;   // 和配乐对齐：前 2 秒是八音盒前奏（只有线稿 + 扭蛋机长出来），低音进来时颜色开始洇开，第 8 秒回到主和弦
 function startBuild(){
   BUILD.started = true; BUILD.on = true;
   try { sessionStorage.setItem('gp_build_seen', '1'); } catch (e) {}
@@ -1798,13 +1821,33 @@ function startBuild(){
     revealBlob(it.box, 'rgb(0,255,0)');                                // G：先标成「还没长出来」
   });
   BUILD.items = items.slice(0, POP_MAX);
-  ovU.uBuild.value = 0;
-  gsap.to(ovU.uBuild, { value:1, duration:BUILD_T, delay:0.45, ease:'sine.inOut', onComplete:buildEnd });
+  ovU.uBuild.value = 0; BUILD.go = false;
+  // 先停在线稿上，等用户点一下（才能放声音）；不点的话几秒后静音开始
+  $('#gate').classList.add('on');
+  clearTimeout(BUILD.auto); BUILD.auto = setTimeout(() => buildGo(false), 4500);
+}
+function buildGo(withSound){
+  if (BUILD.go || !BUILD.on) return;
+  BUILD.go = true; clearTimeout(BUILD.auto); $('#gate').classList.remove('on');
+  const begin = () => {
+    if (SFX.on){
+      SFX.holdLoop = true; SFX.stopLoop(); SFX.track('intro_build', 0.95);
+      gsap.delayedCall(BUILD_DELAY + BUILD_T + 1.6, () => { SFX.holdLoop = false; if (SFX.on) SFX.startLoop(); });
+    }
+    BUILD.t0 = performance.now();
+    gsap.to(ovU.uBuild, { value:1, duration:BUILD_T, delay:BUILD_DELAY, ease:'sine.inOut', onComplete:buildEnd });
+  };
+  if (withSound){
+    SFX.holdLoop = true;
+    if (!SFX.on) SFX.toggle(); else SFX.ensure();
+    // 等配乐解码好再开始（最多等 1.5 秒），声音和画面才对得上
+    Promise.race([SFX.loading || Promise.resolve(), new Promise(r => setTimeout(r, 1500))]).then(begin);
+  } else begin();
 }
 function popItem(it){
   it.state = 1;
   gsap.to(it, { a:1, duration:0.12 });
-  gsap.to(it, { s:1, duration:it.hero ? 0.75 : 0.55, ease:'back.out(2.2)', onComplete(){
+  gsap.to(it, { s:1, duration:it.hero ? 1.1 : 0.8, ease:'back.out(2.0)', onComplete(){
     it.state = 2; revealBlob(it.box, 'rgb(255,0,0)');
     gsap.to(it, { a:0, duration:0.3, delay:0.05 });
   } });
@@ -1815,7 +1858,7 @@ function popItem(it){
       FX.add({ x:x + Math.cos(a)*R0*0.3, y:y + Math.sin(a)*R0*0.15, vx:Math.cos(a)*R0*1.8, vy:Math.sin(a)*R0*0.7 - 30, g:40, drag:3, life:it.hero ? 0.9 : 0.6, sz0:it.hero ? 9 : 6, kind:q % 3 === 2 ? 1 : 0,
         color:pick1(['#ffffff', '#ffe6aa', '#ffc4ea', it.color || '#d8ecff']), a0:0.85, spin:rnd(-4, 4) }); }
   }
-  if (it.hero || Math.random() < 0.4) SFX.play('tile_' + (it.hero ? 0 : Math.floor(rnd(1, 8))), { gain:it.hero ? 0.45 : 0.22 });
+  if (it.hero || Math.random() < 0.4) SFX.play('bloom_' + (it.hero ? 0 : Math.floor(rnd(1, 8))), { gain:it.hero ? 0.4 : 0.2 });   // 升 F 五声音阶，和开场配乐同调
 }
 function buildEnd(){
   if (!BUILD.on) return;
@@ -1823,6 +1866,7 @@ function buildEnd(){
   gsap.delayedCall(0.9, () => { BUILD.on = false; BUILD.items = []; popGeo.instanceCount = 0; ovU.uBuild.value = 1; });
 }
 function buildSkip(){
+  if (!BUILD.go) return;
   gsap.killTweensOf(ovU.uBuild);
   BUILD.items.forEach(it => { gsap.killTweensOf(it); it.a = 0; it.state = 2; });
   revealG.fillStyle = '#f00'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true;
@@ -1830,6 +1874,7 @@ function buildSkip(){
 }
 function updateBuild(){
   if (!BUILD.on){ popGeo.instanceCount = 0; return; }
+  if (!BUILD.go) return;
   const front = ovU.uBuild.value*1.15 - 0.05;
   let n = 0;
   BUILD.items.forEach(it => {
@@ -1860,6 +1905,7 @@ function fireworkBurst(x, y, big){
   for (let k = 0; k < n; k++){ const a = k/n*Math.PI*2;
     FX.add({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp*0.9, g:26, drag:2.0, life:rnd(1.0, 1.4), sz0:rnd(6, 9), kind:k % 2, color:col[k % 2], a0:0.95, tw:true, hold:0.5 }); }
   FX.add({ x, y, vx:0, vy:0, g:0, drag:0, life:0.35, sz0:big ? 60 : 44, kind:1, color:'#ffffff', a0:0.9, grow:0.6 });
+  SFX.play('firework', { gain:big ? 0.45 : 0.3, rate:rnd(0.9, 1.12) });
 }
 function updateNightFX(dt){
   if (REDUCED || OV.mode !== 'overview' || ovU.uIgnite.value < 0.6 || S.night < 0.9) return;
@@ -2073,6 +2119,7 @@ RM.addEventListener?.('change', e => { REDUCED = e.matches; ovU.uMotion.value = 
 
 $('#btnNight').onclick = toggleNight;
 $('#btnSound').onclick = () => SFX.toggle();
+$('#btnGate').onclick = () => buildGo(true);
 $('#btnSpin').onclick = () => { if (S.mode === 'idle'){ if (S.next >= 4){ toast('都扭完啦，点图鉴随时回看'); return; } spin(); } else if (S.mode === 'waiting') openCapsule(); };
 $('#btnReset').onclick = () => location.reload();
 $('#btnHome').onclick = backToPark;
@@ -2091,7 +2138,7 @@ ovLayout(true); clLayout(); layoutFore(); resize(); applyNight(0);
 loop();
 // 调试：?debug 时 window.__dbg；预览窗口隐藏时 rAF 会停，用 __dbg.tick(n) 手动推进
 window.__dbg = { BUILD, startBuild, fireworkBurst, nightTransition, toggleNight,
-  replayBuild(){ BUILD.started = false; BUILD.on = false; revealG.fillStyle = '#000'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true; startBuild(); }, segAt, OV, CL, S, ovU, clU, R, setPush, enterMachine, backToPark, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
+  replayBuild(){ BUILD.started = false; BUILD.on = false; BUILD.go = false; revealG.fillStyle = '#000'; revealG.fillRect(0, 0, 418, 236); revealTex.needsUpdate = true; startBuild(); }, segAt, OV, CL, S, ovU, clU, R, setPush, enterMachine, backToPark, applyNight, tileRain, SFX, FX, clBub, ovBub, BULB_LIST, sprites, CLOSE,
   tick(n = 1, dt = 1/60){ gsap.ticker.lagSmoothing(0); for (let i = 0; i < n; i++){ gsap.ticker.tick(); clock.elapsedTime += dt; frame(dt, clock.elapsedTime); } },
   snap(){ frame(0, clock.elapsedTime); const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height; c.getContext('2d').drawImage(canvas, 0, 0); return c.toDataURL('image/jpeg', 0.85); } };
 
