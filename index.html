@@ -337,29 +337,25 @@
      摆件 = 明信片转架（7 张明信片是 7 个页面的真实截图，可拖动旋转，点一张直达那一页）
      说明书 = 三折纸条，从蛋里出来是折着的，一折一折打开；纸在夜里也是纸色 */
   #toy{position:fixed;inset:0;z-index:10;display:grid;place-items:center;pointer-events:none;visibility:hidden;
-    --paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .32 0 0 0 0 .42 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+    --paper:url(assets/toy/slip_paper.webp)}
   #toy.on{visibility:visible}
   .toy-in{display:flex;align-items:center;gap:64px}
   .toy-in > *{pointer-events:auto}
   @media (max-aspect-ratio:1/1){ .toy-in{flex-direction:column;gap:0} .rk{margin:30px 30px 44px} }
 
-  .rk{position:relative;width:300px;height:400px;scale:1.2;margin:40px 30px;perspective:1000px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+  .rk{position:relative;width:300px;height:420px;scale:1.2;margin:40px 30px;perspective:1000px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
   .rk.drag{cursor:grabbing}
   .rk-sc{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(-9deg)}
   .rk-spin{position:absolute;inset:0;transform-style:preserve-3d}
-  .rk-pole{position:absolute;left:146px;top:62px;width:8px;height:276px;border-radius:4px;background:linear-gradient(90deg,#d9ae62,#fff3d6 42%,#e7c07c 70%,#c99a52)}
-  .rk-ball{position:absolute;left:139px;top:52px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0,#ffe7ad 30%,#d9ae62 80%);box-shadow:0 3px 8px rgba(160,110,60,.35)}
-  .rk-ring{position:absolute;left:24px;width:252px;height:252px;margin-top:-126px;border-radius:50%;border:3px solid #dcae5e;transform:rotateX(90deg);box-shadow:0 0 0 1px rgba(255,248,225,.9),0 0 8px rgba(217,174,98,.5)}
-  .rk-base{position:absolute;left:75px;top:322px;width:150px;height:34px}
-  .rk-base::before,.rk-base::after{content:"";position:absolute;left:0;right:0;height:30px;border-radius:50%}
-  .rk-base::before{top:9px;background:linear-gradient(90deg,#e48bb8,#f7b9d6 45%,#d97aab)}
-  .rk-base::after{top:0;background:radial-gradient(ellipse at 42% 35%,#fff 0,#ffd9ea 38%,#f4a9cc 100%);box-shadow:inset 0 -2px 0 rgba(255,255,255,.6)}
-  .rk-sh{position:absolute;left:52px;top:346px;width:196px;height:30px;border-radius:50%;background:radial-gradient(closest-side,rgba(120,50,110,.32),transparent);filter:blur(3px)}
-  .rk-sign{position:absolute;left:50%;top:4px;transform:translateX(-50%) rotate(-3deg);padding:6px 16px 7px;border-radius:12px;background:#fffaf4 var(--paper);
-    border:1.5px solid #f2b6d3;box-shadow:inset 0 0 0 3px #fffaf4,inset 0 0 0 4px rgba(217,174,98,.55),0 8px 18px -8px rgba(150,70,130,.5);
-    text-align:center;font-size:15px;font-weight:700;letter-spacing:.02em;color:#5b3b62;white-space:nowrap;pointer-events:none}
-  .rk-sign small{display:block;font-size:9px;font-weight:600;letter-spacing:.24em;color:#c2549d;margin-bottom:1px}
-  .rk-tip{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:12px;padding:5px 12px;border-radius:999px;white-space:nowrap;color:var(--ink);
+  /* 手绘转架（立柱在图正中 x=50%），和明信片同在一个 3D 平面里：转到后面的明信片会被立柱挡住 */
+  .rk-stand{position:absolute;left:12px;top:-12px;width:276px;height:414px;pointer-events:none;-webkit-user-drag:none}
+  .rk-sh{position:absolute;left:62px;top:372px;width:176px;height:30px;border-radius:50%;background:radial-gradient(closest-side,rgba(120,50,110,.32),transparent);filter:blur(3px)}
+  .rk-sign{position:absolute;left:45px;top:13px;width:210px;height:73px;padding-top:25px;box-sizing:border-box;background:url(assets/toy/rack_sign.webp) center/100% 100% no-repeat;
+    filter:drop-shadow(0 6px 8px rgba(150,70,130,.28));text-align:center;font-size:14px;line-height:1.1;font-weight:700;letter-spacing:.02em;color:#5b3b62;white-space:nowrap;pointer-events:none}
+  body.night .rk-stand{filter:brightness(.86) saturate(.95)}
+  body.night .rk-sign{filter:drop-shadow(0 6px 8px rgba(20,10,60,.4)) brightness(.9)}
+  .rk-sign small{display:block;font-size:8px;font-weight:600;letter-spacing:.24em;color:#c2549d;margin-bottom:2px}
+  .rk-tip{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);font-size:12px;padding:5px 12px;border-radius:999px;white-space:nowrap;color:var(--ink);
     background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none}
   .pc{position:absolute;left:100px;top:92px;width:100px;height:140px;transform-style:preserve-3d;cursor:pointer}
   .pc-f,.pc-b{position:absolute;inset:0;border-radius:4px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
@@ -368,7 +364,7 @@
   .pc-f span{position:absolute;left:0;right:0;bottom:4px;z-index:2;text-align:center;font-size:10px;font-weight:600;color:#8a5a86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
   .pc-f::before{content:"";position:absolute;left:0;right:0;bottom:0;height:36%;z-index:1;border-top:1px solid rgba(255,255,255,.95);
     background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,226,242,.5))}
-  .pc-b{transform:rotateY(180deg);background:#fdf5ee var(--paper);box-shadow:0 0 0 1px rgba(232,184,210,.8)}
+  .pc-b{transform:rotateY(180deg);background:#fdf5ee var(--paper);background-blend-mode:multiply;box-shadow:0 0 0 1px rgba(232,184,210,.8)}
   .pc-b::before{content:"";position:absolute;left:52%;top:42px;right:8px;bottom:22px;background:repeating-linear-gradient(180deg,transparent 0 15px,rgba(200,150,180,.55) 15px 16px)}
   .pc-b::after{content:"";position:absolute;left:50%;top:12px;bottom:14px;border-left:1px solid rgba(200,150,180,.45)}
   .pc-b i{position:absolute;right:8px;top:9px;width:20px;height:24px;border:1.5px dashed #ec85c3;border-radius:2px}
@@ -379,11 +375,11 @@
   .sl-p{position:absolute;left:0;width:100%;height:150px;transform-style:preserve-3d;transform-origin:50% 0}
   .sl-a{top:0} .sl-b,.sl-c{top:100%}
   .sl-f,.sl-k{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
-  .sl-f{padding:16px 22px;color:#5b3b62;background:linear-gradient(180deg,rgba(180,110,150,.09),transparent 16px),#fffaf3 var(--paper);
+  .sl-f{padding:16px 22px;color:#5b3b62;background:linear-gradient(180deg,rgba(180,110,150,.09),transparent 16px),#fffaf3 var(--paper);background-blend-mode:multiply;
     box-shadow:0 22px 34px -22px rgba(120,50,110,.45)}
   .sl-f::after{content:"";position:absolute;inset:0;background:#6a3c66;opacity:var(--fs,0);pointer-events:none}
-  .sl-k{transform:rotateX(180deg);background:#f6e6dc var(--paper)}
-  .sl-a .sl-f{border-radius:8px 8px 0 0;background:#fffaf3 var(--paper)}
+  .sl-k{transform:rotateX(180deg);background:#f6e6dc var(--paper);background-blend-mode:multiply}
+  .sl-a .sl-f{border-radius:8px 8px 0 0;background:#fffaf3 var(--paper);background-blend-mode:multiply}
   .sl-b .sl-f,.sl-c .sl-f{border-top:1.5px dashed rgba(214,150,186,.6)}
   .sl-c .sl-f,.sl-c .sl-k{border-radius:0 0 8px 8px}
   .sl-top{display:flex;align-items:baseline;gap:10px;font-size:10px;letter-spacing:.22em;color:#a07898}
@@ -1826,7 +1822,7 @@ function buildToy(k){
   toyEl.innerHTML = `<div class="toy-in">
     <div class="rk" role="group" aria-label="明信片转架：拖动旋转，点一张明信片打开那一页">
       <div class="rk-sh"></div>
-      <div class="rk-sc"><div class="rk-base"></div><div class="rk-pole"></div><div class="rk-ball"></div>${rings}<div class="rk-spin">${cards}</div></div>
+      <div class="rk-sc"><img class="rk-stand" src="assets/toy/rack_stand.webp" alt="" draggable="false">${rings}<div class="rk-spin">${cards}</div></div>
       <div class="rk-sign"><small>GREETINGS FROM</small>doshglobal.com</div>
       <div class="rk-tip">${TOUCH ? '滑动' : '拖动'}转一转 · 点明信片直达那一页</div>
     </div>
